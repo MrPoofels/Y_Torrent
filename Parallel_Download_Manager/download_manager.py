@@ -47,7 +47,7 @@ class DownloadManager:
                 if curr_hash == self.meta_info.hashes[piece.piece_index]:
                     self.priority_list.remove(piece)
                     self.bitfield[piece.piece_index] = '0b1'
-                    piece.remaining_blocks = None
+                    piece.blocks_to_request = None
                     piece.bytes_downloaded = self.meta_info.piece_size
         if not self.file.seek(0, 2) == self.meta_info.size:
             self.file.seek(self.meta_info.size - 1)
@@ -55,7 +55,7 @@ class DownloadManager:
             self.file.seek(0)
 
         self.peer_list = list()
-        test = asyncio.create_task(self.initialize_peer_list(peer_info_list))
+        asyncio.create_task(self.initialize_peer_list(peer_info_list))
 
 
     async def initialize_peer_list(self, peer_info_list):
@@ -84,9 +84,10 @@ class DownloadManager:
                 self.bitfield[piece.piece_index] = 1
                 logging.debug(f"Piece number {piece.piece_index} has been successfully downloaded")
                 for peer in self.peer_list:
-                    await peer.send_have_msg(piece.piece_index)
+                    asyncio.create_task(peer.send_have_msg(piece.piece_index))
             else:
                 piece.bytes_downloaded = 0
+                piece.blocks_to_download_counter = 0
                 piece.initiate_block_list(self.meta_info.piece_size)
                 logging.debug(f"Piece number {piece.piece_index} did not pass verification")
 

@@ -32,6 +32,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 @PMD.Async_init
 class Peer:
+    curr_piece: PMD.Piece
+
     async def __init__(self, download_manager, peer_id = None, peer_ip = None, peer_port = None, reader = None, writer = None):
         """
         The constructor for Peer
@@ -141,6 +143,8 @@ class Peer:
                 if not (piece_index, block) in self.pending_requests:
                     # TODO: implement strike system to disconnect from malicious peers
                     return
+                if not block.length == len(data):
+                    await self.curr_piece.return_block(block)
                 await (self.download_manager.write_to_file(begin, data, piece_index))
                 self.pending_requests.remove((piece_index, block))
             case 8: # "cancel"
@@ -197,7 +201,7 @@ class Peer:
             if self.curr_piece is None:
                 await asyncio.sleep(0.5)
                 continue
-            while self.curr_piece.remaining_blocks:
+            while self.curr_piece.blocks_to_request:
                 curr_block = await self.curr_piece.select_block()
                 while len(self.pending_requests) >= PENDING_REQUEST_MAXIMUM:
                     await asyncio.sleep(1)
@@ -224,7 +228,7 @@ class Peer:
     async def return_pending_requests(self):
         for piece_index, block in self.pending_requests:
             curr_piece = self.download_manager.piece_list[piece_index]
-            if not curr_piece.remaining_blocks:
+            if not curr_piece.blocks_to_request:
                 self.download_manager.priority_list.append(curr_piece)
             curr_piece.return_block(block)
         self.pending_requests.clear()
