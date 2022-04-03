@@ -24,7 +24,7 @@ async def __client_connected_cb(reader, writer):
     recv_peer_id = (await reader.read(20)).decode()
     if protocol_str == "BitTorrent protocol":
         for torrent in torrents_list:
-            if torrent.downloader_id == "Leecher".ljust(20):  # bytes.fromhex(torrent.meta_info.infohash) == peer_info_hash:
+            if bytes.fromhex(torrent.meta_info.infohash) == peer_info_hash:
                 logging.debug(f"{torrent.downloader_id} has accepted the handshake")
                 await torrent.add_peer(reader, writer)
                 return

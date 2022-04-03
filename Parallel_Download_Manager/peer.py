@@ -21,6 +21,10 @@ HAVE_MESSAGE_ID = (4).to_bytes(1, 'big')
 BITFIELD_MESSAGE_BASE_LENGTH = 1
 BITFIELD_MESSAGE_ID = (5).to_bytes(1, 'big')
 
+CHOKE_MESSAGE_LENGTH = (1).to_bytes(1, 'big')
+
+INTERESTED_MESSAGE_LENGTH = (1).to_bytes(1, 'big')
+
 # EXPAND: determine dynamically
 DEFAULT_BLOCK_LEN = 16000
 PENDING_REQUEST_MAXIMUM = 5
@@ -32,7 +36,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 @PMD.Async_init
 class Peer:
-    curr_piece: PMD.Piece
+    download_manager: PMD.DownloadManager
 
     async def __init__(self, download_manager, peer_id = None, peer_ip = None, peer_port = None, reader = None, writer = None):
         """
@@ -44,12 +48,13 @@ class Peer:
 
         self.model = list()
 
-        self.am_choking = False #this is set to false for testing purposes change to true later
-        self.am_interested = False
-        self.peer_choking = True
-        self.peer_interested = False
+        self._am_choking = True
+        self._am_interested = False
+        self._peer_choking = True
+        self._peer_interested = False
 
-        self.curr_piece = None
+        self.upload_rate = 0
+        self.download_rate = 0
 
         self.pending_requests = list()
         self.blocks_to_upload = collections.deque()
@@ -108,20 +113,22 @@ class Peer:
     async def message_handler(self, length, message_id, payload, q):
         match message_id:
             case 0: # "choke"
-                self.peer_choking = True
+                await self.change_peer_choking_state(True)
                 await self.return_pending_requests()
             case 1: # "un-choke"
-                self.peer_choking = False
+                await self.change_peer_choking_state(False)
                 self.request_loop_task = asyncio.create_task(self.request_loop())
             case 2: # "interested"
-                self.peer_interested = True
+                await self.change_peer_interested_state(True)
             case 3: # "not interested"
-                self.peer_interested = False
+                await self.change_peer_interested_state(False)
             case 4: # "have"
-                if int.from_bytes(payload, "big") > (len(self.download_manager.piece_list) - 1):
+                piece_index = int.from_bytes(payload, "big")
+                if piece_index > (len(self.download_manager.piece_list) - 1):
                     pass # implement connection shutdown/ blacklist for malicious peers
-                await self.update_model(self.download_manager.piece_list[int.from_bytes(payload, "big")])
-                self.download_manager.priority_list_changes_counter += 1
+                await self.update_model(self.download_manager.piece_list[piece_index])
+                self.download_manager.decrease_piece_priority(self.download_manager.piece_list[piece_index])
+                await self.change_am_interested_state(True)
             case 5: # "bitfield"
                 flags = BitArray(bytes=payload, length=self.download_manager.meta_info.pieces)
                 index = 0
@@ -129,24 +136,31 @@ class Peer:
                     if flag == '1':
                         await self.update_model(self.download_manager.piece_list[index])
                     index += 1
-                self.download_manager.priority_list_changes_counter += len(flags)
-                self.request_loop_task = asyncio.create_task(self.request_loop()) # This is temporary
-                self.upload_loop_task = asyncio.create_task(self.upload_loop()) # This is temporary
+                self.download_manager.sort_priority_list()
+                await self.change_am_interested_state(True)
             case 6: # "request"
-                if not self.am_choking:
+                if not self._am_choking:
                     self.blocks_to_upload.append((int.from_bytes(payload[0:4], "big"), PMD.Block(int.from_bytes(payload[4:8], "big"), int.from_bytes(payload[8:], "big"))))
             case 7: # "block"
                 piece_index = int.from_bytes(payload[0:4], "big")
                 begin = int.from_bytes(payload[4:8], "big")
                 data = payload[8:]
                 block = PMD.Block(begin, (length - 8)) # minus 8 bits for the piece index and begin
-                if not (piece_index, block) in self.pending_requests:
+                for request in self.pending_requests:
+                    if (piece_index, block) == request:
+                        block = request[1]
+                        break
+                    else:
+                        block = None
+                if block is None:
+                    pass
+                    #strike system goes here too
+                elif block.length != len(data):
+                    block.requested = False
                     # TODO: implement strike system to disconnect from malicious peers
-                    return
-                if not block.length == len(data):
-                    await self.curr_piece.return_block(block)
-                await (self.download_manager.write_to_file(begin, data, piece_index))
-                self.pending_requests.remove((piece_index, block))
+                else:
+                    await (self.download_manager.write_to_file(block, data, piece_index))
+                    self.pending_requests.remove((piece_index, block))
             case 8: # "cancel"
                 pass
                 # TODO: handle close messages in uploader as separate task, should get request info from self.blocks_to_upload to cancel it
@@ -184,10 +198,58 @@ class Peer:
         await self.writer.drain()
 
 
+    async def change_peer_interested_state(self, state):
+        if state == self._peer_interested:
+            return
+        self._peer_interested = state
+        if self._peer_interested:
+            if not self._am_choking:
+                self.upload_loop_task = asyncio.create_task(self.upload_loop())
+        else:
+            self.upload_loop_task.cancel()
+
+
+    async def change_peer_choking_state(self, state):
+        if state == self._peer_choking:
+            return
+        self._peer_choking = state
+        if not self._peer_choking:
+            if self._am_interested:
+                self.request_loop_task = asyncio.create_task(self.request_loop())
+        else:
+            self.request_loop_task.cancel()
+
+
+    async def change_am_interested_state(self, state):
+        if state == self._am_interested:
+            return
+        self._am_interested = state
+        if self._am_interested:
+            if not self._peer_choking:
+                self.request_loop_task = asyncio.create_task(self.request_loop())
+        else:
+            self.request_loop_task.cancel()
+        message = INTERESTED_MESSAGE_LENGTH + (2 if self._am_interested else 3).to_bytes(1, 'big')
+        self.writer.write(message)
+
+
+    async def change_am_choking_state(self, state):
+        if state == self._am_choking:
+            return
+        self._am_choking = state
+        if not self._am_choking:
+            if self._peer_interested:
+                self.upload_loop_task = asyncio.create_task(self.upload_loop())
+        else:
+            self.upload_loop_task.cancel()
+            self.blocks_to_upload.clear()
+        message = CHOKE_MESSAGE_LENGTH + (0 if self._am_choking else 1).to_bytes(1, 'big')
+        self.writer.write(message)
+
+
     async def upload_loop(self):
-        # TODO: un-assign and reassign task according to peer_interested and am_choking remember to clear blocks_to_upload on choke
         while True:
-            while self.blocks_to_upload.__len__() == 0:
+            while len(self.blocks_to_upload) == 0:
                 await asyncio.sleep(0.5)
             (piece_index, block) = self.blocks_to_upload.popleft()
             message = (PIECE_MESSAGE_BASE_LENGTH + block.length).to_bytes(4, 'big') + PIECE_MESSAGE_ID + piece_index.to_bytes(4, 'big') + block.begin.to_bytes(4, 'big') + await self.download_manager.read_from_file(piece_index, block)
@@ -197,40 +259,38 @@ class Peer:
 
     async def request_loop(self):
         while True:
-            self.curr_piece = await self.select_piece()
-            if self.curr_piece is None:
-                await asyncio.sleep(0.5)
-                continue
-            while self.curr_piece.blocks_to_request:
-                curr_block = await self.curr_piece.select_block()
+            curr_piece = await self.select_piece()
+            if curr_piece is None:
+                await asyncio.create_task(self.change_am_interested_state(False))
+            while True:
                 while len(self.pending_requests) >= PENDING_REQUEST_MAXIMUM:
                     await asyncio.sleep(1)
-                await self.request_block(curr_block)
-            self.download_manager.priority_list.remove(self.curr_piece)
+                curr_block = curr_piece.select_block()
+                if curr_block is None:
+                    break
+                await self.request_block(curr_piece, curr_block)
             
 
-    async def request_block(self, block):
-        message = REQUEST_MESSAGE_LENGTH + REQUEST_MESSAGE_ID + self.curr_piece.piece_index.to_bytes(4, 'big') + block.begin.to_bytes(4, 'big') + block.length.to_bytes(4, 'big')
+    async def request_block(self, curr_piece, block):
+        message = REQUEST_MESSAGE_LENGTH + REQUEST_MESSAGE_ID + curr_piece.piece_index.to_bytes(4, 'big') + block.begin.to_bytes(4, 'big') + block.length.to_bytes(4, 'big')
+        self.pending_requests.append((curr_piece.piece_index, block))
+        block.requested = True
         self.writer.write(message)
         await self.writer.drain()
-        self.pending_requests.append((self.curr_piece.piece_index, block))
 
 
     async def select_piece(self):
         for piece in self.download_manager.priority_list:
-            if piece in self.model:
-                self.am_interested = True
-                logging.debug(f"Piece number {piece.piece_index} has been selected")
-                return piece
+            if piece.blocks_to_request:
+                if piece in self.model:
+                    logging.debug(f"Piece number {piece.piece_index} has been selected")
+                    return piece
         return None
 
 
     async def return_pending_requests(self):
         for piece_index, block in self.pending_requests:
-            curr_piece = self.download_manager.piece_list[piece_index]
-            if not curr_piece.blocks_to_request:
-                self.download_manager.priority_list.append(curr_piece)
-            curr_piece.return_block(block)
+            block.requested = False
         self.pending_requests.clear()
 
 

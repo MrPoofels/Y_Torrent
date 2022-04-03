@@ -34,7 +34,6 @@ class DownloadManager:
 
         self.priority_list = [piece for piece in self.piece_list]
         self.priority_list.sort()
-        self.priority_list_changes_counter = 0
 
         try:
             self.file = open(path, 'xb+')
@@ -58,14 +57,16 @@ class DownloadManager:
         asyncio.create_task(self.initialize_peer_list(peer_info_list))
 
 
+    # TODO: return function to generator
     async def initialize_peer_list(self, peer_info_list):
         self.peer_list.extend(await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]))
 
 
-    async def write_to_file(self, begin, data, piece_index):
+    async def write_to_file(self, block, data, piece_index):
         curr_piece = self.piece_list[piece_index]
         await curr_piece.update_progress(len(data))
-        self.file.seek((piece_index * self.meta_info.piece_size) + begin)
+        curr_piece.blocks_to_request.remove(block)
+        self.file.seek((piece_index * self.meta_info.piece_size) + block.begin)
         self.file.write(data)
         logging.debug("wrote some data to file")
         await self.determine_piece_complete(curr_piece, (piece_index * self.meta_info.piece_size))
@@ -82,7 +83,7 @@ class DownloadManager:
             if curr_hash == self.meta_info.hashes[piece.piece_index]:
                 logging.debug(f"Piece number {piece.piece_index} has been downloaded and verified")
                 self.bitfield[piece.piece_index] = 1
-                logging.debug(f"Piece number {piece.piece_index} has been successfully downloaded")
+                self.priority_list.remove(piece)
                 for peer in self.peer_list:
                     asyncio.create_task(peer.send_have_msg(piece.piece_index))
             else:
@@ -102,8 +103,23 @@ class DownloadManager:
         self.peer_list.append(await PMD.Peer(self, reader=reader,writer=writer))
 
 
-    async def update_priority_list(self):
-        # write in project file about using card sort instead of built in
-        while True:
-            if self.priority_list_changes_counter >= 5:
-                self.priority_list.sort()
+    def sort_priority_list(self):
+        self.priority_list.sort()
+
+
+    def decrease_piece_priority(self, piece):
+        priority_list_index = self.priority_list.index(piece)
+        self.priority_list.pop(priority_list_index)
+        while piece.amount_in_swarm > self.priority_list[priority_list_index].amount_in_swarm and\
+                priority_list_index < len(self.priority_list): # doesn't compare to index +1 because og piece was popped
+            priority_list_index  += 1
+        self.priority_list.insert(priority_list_index, piece)
+
+
+    def increase_piece_priority(self, piece):
+        priority_list_index = self.priority_list.index(piece)
+        self.priority_list.pop(priority_list_index)
+        while piece.amount_in_swarm < self.priority_list[priority_list_index - 1].amount_in_swarm and\
+                priority_list_index > 0:
+            priority_list_index  -= 1
+        self.priority_list.insert(priority_list_index, piece)
