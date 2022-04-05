@@ -10,6 +10,7 @@ from torf import Torrent # https://torf.readthedocs.io/en/stable/
 from hashlib import sha1
 import logging
 import random
+import tracker_communication
 
 # TODO: implement peer interest algorithm
 
@@ -28,7 +29,7 @@ class DownloadManager:
     peer_list: list[PMD.Peer]
     bitfield: BitArray
 
-    async def __init__(self, peer_info_list, client_id, torrent_path = None, path = None):
+    async def __init__(self, ip, client_id, torrent_path = None, path = None):
         self.client_id = client_id
 
         self.meta_info = Torrent.read(torrent_path)
@@ -36,6 +37,9 @@ class DownloadManager:
         self.piece_list = [PMD.Piece(index, self.meta_info.piece_size) for index in range(len(self.meta_info.hashes) - 1)]
         self.piece_list.append(PMD.Piece(self.meta_info.pieces - 1, self.meta_info.size % self.meta_info.piece_size))
         self.bitfield = BitArray(uint=0, length=self.meta_info.pieces)
+
+        self.bytes_downloaded = 0
+        self.bytes_uploaded = 0
 
         self.priority_list = [piece for piece in self.piece_list]
         self.priority_list.sort()
@@ -52,11 +56,20 @@ class DownloadManager:
                     self.priority_list.remove(piece)
                     self.bitfield[piece.piece_index] = '0b1'
                     piece.blocks_to_request = None
-                    piece.bytes_downloaded = self.meta_info.piece_size
+                    if piece.piece_index == (self.meta_info.pieces - 1):
+                        piece_size = self.meta_info.size % self.meta_info.piece_size
+                    else:
+                        piece_size = self.meta_info.piece_size
+                    piece.bytes_downloaded = piece_size
+                    self.bytes_downloaded += piece_size
         if not self.file.seek(0, 2) == self.meta_info.size:
             self.file.seek(self.meta_info.size - 1)
             self.file.write(b"\0")
             self.file.seek(0)
+
+        self.tracker_communication = tracker_communication.TrackerCommunication(self.meta_info.trackers[0], self.meta_info.infohash, self.client_id, ip)
+        await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.size - self.bytes_downloaded, "started")
+        peer_info_list = await self.tracker_communication.tracker_response()
 
         self.peer_list = await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list])
         self.peer_list.sort(reverse=True)
@@ -74,6 +87,7 @@ class DownloadManager:
     async def write_to_file(self, block, data, piece_index):
         curr_piece = self.piece_list[piece_index]
         await curr_piece.update_progress(len(data))
+        self.bytes_downloaded += len(data)
         curr_piece.blocks_to_request.remove(block)
         self.file.seek((piece_index * self.meta_info.piece_size) + block.begin)
         self.file.write(data)
@@ -98,6 +112,7 @@ class DownloadManager:
                 piece.bytes_downloaded = 0
                 piece.blocks_to_download_counter = 0
                 piece.initiate_block_list(self.meta_info.piece_size)
+                self.bytes_downloaded -= piece_size
                 logging.debug(f"Piece number {piece.piece_index} did not pass verification")
 
 

@@ -267,6 +267,7 @@ class Peer:
             message = (PIECE_MESSAGE_BASE_LENGTH + block.length).to_bytes(4, 'big') + PIECE_MESSAGE_ID + piece_index.to_bytes(4, 'big') + block.begin.to_bytes(4, 'big') + await self.download_manager.read_from_file(piece_index, block)
             self.writer.write(message)
             self.upload_rolling_window[0] += len(message)
+            self.download_manager.bytes_uploaded += block.length
             await self.writer.drain()
 
 
