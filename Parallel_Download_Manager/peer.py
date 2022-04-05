@@ -1,4 +1,5 @@
 import asyncio
+import queue
 import socket
 
 import bitstring
@@ -6,6 +7,7 @@ from bitstring import BitArray # docs: https://bitstring.readthedocs.io/en/lates
 import Parallel_Download_Manager as PMD
 import collections # https://docs.python.org/3/library/collections.html
 import logging
+import numpy as np
 
 
 PROTOCOL_IDENTIFIER = "BitTorrent protocol"
@@ -36,14 +38,17 @@ logging.basicConfig(level=logging.DEBUG)
 
 @PMD.Async_init
 class Peer:
-    download_manager: PMD.DownloadManager
+    upload_loop_task: asyncio.Task
+    reader: asyncio.streams.StreamReader
 
-    async def __init__(self, download_manager, peer_id = None, peer_ip = None, peer_port = None, reader = None, writer = None):
+    async def __init__(self, download_manager, peer_id, peer_ip = None, peer_port = None, reader = None, writer = None):
         """
         The constructor for Peer
 
         :type download_manager: DownloadManager
         """
+        self.peer_id = peer_id
+
         self.download_manager = download_manager
 
         self.model = list()
@@ -53,32 +58,37 @@ class Peer:
         self._peer_choking = True
         self._peer_interested = False
 
-        self.upload_rate = 0
-        self.download_rate = 0
+        self.client_upload_rate = 0
+        self.upload_rolling_window = collections.deque(0, maxlen=20)
+        self.client_download_rate = 0
+        self.download_rolling_window = collections.deque(0, maxlen=20)
 
         self.pending_requests = list()
         self.blocks_to_upload = collections.deque()
+
+        self.optimistic_unchoke_weight = 3
 
         self.reader = reader
         self.writer = writer
 
         if (reader, writer) == (None, None): # If this client is the initiator
-            await self.initialize_connection(peer_ip, peer_port, self.download_manager.downloader_id, peer_id)
+            await self.initialize_connection(peer_ip, peer_port, peer_id)
         else: # If this client is the recipient
-            await self.send_handshake(self.download_manager.downloader_id)
+            await self.send_handshake()
         # await self.writer.drain()
 
         await self.send_bitfield_msg()
 
         self.receive_loop_task = asyncio.create_task(self.recv_loop())
-
         self.request_loop_task = None # will contain a task for request_loop when an un-choke happens
         self.upload_loop_task = None
 
+        self.average_rate_task = asyncio.create_task(self.average_up_dw_rate())
 
-    async def initialize_connection(self, peer_ip, peer_port, downloader_id, peer_id):
+
+    async def initialize_connection(self, peer_ip, peer_port, peer_id):
         await self.initialize_stream(peer_ip, peer_port)
-        await self.send_handshake(downloader_id)
+        await self.send_handshake()
         await self.accept_handshake(peer_id)
 
 
@@ -87,9 +97,9 @@ class Peer:
         self.reader, self.writer = await asyncio.open_connection(host=peer_ip, port=peer_port, limit=1)
 
 
-    async def send_handshake(self, downloader_id):
+    async def send_handshake(self):
         # begin handshake with format: <protocol str len> <protocol str> <8 bytes reserved> <info_hash> <my_id>
-        handshake = len(PROTOCOL_IDENTIFIER).to_bytes(1, "big") + PROTOCOL_IDENTIFIER.encode() + bytes(8) + bytes.fromhex(self.download_manager.meta_info.infohash) + downloader_id.encode()
+        handshake = len(PROTOCOL_IDENTIFIER).to_bytes(1, "big") + PROTOCOL_IDENTIFIER.encode() + bytes(8) + bytes.fromhex(self.download_manager.meta_info.infohash) + self.download_manager.client_id.encode()
         self.writer.write(handshake)
 
 
@@ -103,7 +113,7 @@ class Peer:
         if protocol_str == "BitTorrent protocol":
             if True:  # peer_info_hash == bytes.fromhex(self.download_manager.meta_info.infohash):
                 if recv_peer_id == peer_id:
-                    logging.debug(f"{self.download_manager.downloader_id} has accepted the handshake")
+                    logging.debug(f"{self.download_manager.client_id} has accepted the handshake")
                     return
         self.writer.close()
         await self.writer.wait_closed()
@@ -128,7 +138,8 @@ class Peer:
                     pass # implement connection shutdown/ blacklist for malicious peers
                 await self.update_model(self.download_manager.piece_list[piece_index])
                 self.download_manager.decrease_piece_priority(self.download_manager.piece_list[piece_index])
-                await self.change_am_interested_state(True)
+                if self.select_piece() is not None:
+                    await self.change_am_interested_state(True)
             case 5: # "bitfield"
                 flags = BitArray(bytes=payload, length=self.download_manager.meta_info.pieces)
                 index = 0
@@ -137,7 +148,8 @@ class Peer:
                         await self.update_model(self.download_manager.piece_list[index])
                     index += 1
                 self.download_manager.sort_priority_list()
-                await self.change_am_interested_state(True)
+                if self.select_piece() is not None:
+                    await self.change_am_interested_state(True)
             case 6: # "request"
                 if not self._am_choking:
                     self.blocks_to_upload.append((int.from_bytes(payload[0:4], "big"), PMD.Block(int.from_bytes(payload[4:8], "big"), int.from_bytes(payload[8:], "big"))))
@@ -169,9 +181,6 @@ class Peer:
 
     async def message_interpreter(self):
         length = (await self.reader.read(4))
-        # while len(length) == 0:
-        #     length = (await self.reader.read(4))
-        #     await asyncio.sleep(0.1)
         length = int.from_bytes(length, 'big')
         if length == 0:
             message_id = "-1"
@@ -203,10 +212,10 @@ class Peer:
             return
         self._peer_interested = state
         if self._peer_interested:
-            if not self._am_choking:
-                self.upload_loop_task = asyncio.create_task(self.upload_loop())
+            if self._am_choking:
+                self.optimistic_unchoke_weight = 1 if self.model else 3
         else:
-            self.upload_loop_task.cancel()
+            self.optimistic_unchoke_weight = 0
 
 
     async def change_peer_choking_state(self, state):
@@ -234,15 +243,18 @@ class Peer:
 
 
     async def change_am_choking_state(self, state):
-        if state == self._am_choking:
-            return
         self._am_choking = state
         if not self._am_choking:
+            self.optimistic_unchoke_weight = 0
             if self._peer_interested:
-                self.upload_loop_task = asyncio.create_task(self.upload_loop())
+                if self.upload_loop_task.cancelled() or self.upload_loop_task is None:
+                    self.upload_loop_task = asyncio.create_task(self.upload_loop())
         else:
-            self.upload_loop_task.cancel()
-            self.blocks_to_upload.clear()
+            if not (self.upload_loop_task.cancelled() or self.upload_loop_task is None):
+                self.upload_loop_task.cancel()
+                self.blocks_to_upload.clear()
+            if self._peer_interested:
+                self.optimistic_unchoke_weight = 1 if self.model else 3
         message = CHOKE_MESSAGE_LENGTH + (0 if self._am_choking else 1).to_bytes(1, 'big')
         self.writer.write(message)
 
@@ -254,6 +266,7 @@ class Peer:
             (piece_index, block) = self.blocks_to_upload.popleft()
             message = (PIECE_MESSAGE_BASE_LENGTH + block.length).to_bytes(4, 'big') + PIECE_MESSAGE_ID + piece_index.to_bytes(4, 'big') + block.begin.to_bytes(4, 'big') + await self.download_manager.read_from_file(piece_index, block)
             self.writer.write(message)
+            self.upload_rolling_window[0] += len(message)
             await self.writer.drain()
 
 
@@ -261,7 +274,8 @@ class Peer:
         while True:
             curr_piece = await self.select_piece()
             if curr_piece is None:
-                await asyncio.create_task(self.change_am_interested_state(False))
+                uninterested = asyncio.create_task(self.change_am_interested_state(False))
+                await uninterested
             while True:
                 while len(self.pending_requests) >= PENDING_REQUEST_MAXIMUM:
                     await asyncio.sleep(1)
@@ -298,11 +312,28 @@ class Peer:
         q = asyncio.Queue(5)
         while True:
             length, message_id, payload = await self.message_interpreter()
+            self.download_rolling_window[0] += (length + 5)
             task = asyncio.create_task(self.message_handler(length, message_id, payload, q))
             await q.put(task)
 
 
     async def update_model(self, piece):
+        if not self.model:
+            self.optimistic_unchoke_weight = 1
         if not piece in self.model:
             self.model.append(piece)
             piece.amount_in_swarm += 1
+
+
+    async def average_up_dw_rate(self):
+        while True:
+            await asyncio.sleep(10)
+            self.client_download_rate = np.average(self.download_rolling_window)
+            self.client_upload_rate = np.average(self.upload_rolling_window)
+            self.upload_rolling_window.appendleft(0)
+            self.download_rolling_window.appendleft(0)
+
+
+    def __lt__(self, other):
+        return self.client_download_rate < other.client_download_rate
+

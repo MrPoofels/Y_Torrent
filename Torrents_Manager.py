@@ -25,13 +25,13 @@ async def __client_connected_cb(reader, writer):
     if protocol_str == "BitTorrent protocol":
         for torrent in torrents_list:
             if bytes.fromhex(torrent.meta_info.infohash) == peer_info_hash:
-                logging.debug(f"{torrent.downloader_id} has accepted the handshake")
-                await torrent.add_peer(reader, writer)
+                logging.debug(f"{torrent.client_id} has accepted the handshake")
+                await torrent.add_peer(reader, writer, recv_peer_id)
                 return
     writer.close()
     await writer.wait_closed()
     asyncio.current_task().cancel()
 
 
-async def create_new_torrent(torrent_path, path, peer_info_list, downloader_id):
-    torrents_list.append((await Parallel_Download_Manager.DownloadManager(torrent_path, path, peer_info_list, downloader_id)))
+async def create_new_torrent(peer_info_list, client_id, torrent_path, path):
+    torrents_list.append((await Parallel_Download_Manager.DownloadManager(peer_info_list, client_id, torrent_path, path)))

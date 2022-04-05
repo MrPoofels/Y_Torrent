@@ -1,4 +1,7 @@
 import asyncio
+import collections
+import random
+from typing import Tuple, Any, List
 
 import torf
 from bitstring import BitArray
@@ -6,6 +9,7 @@ import Parallel_Download_Manager as PMD
 from torf import Torrent # https://torf.readthedocs.io/en/stable/
 from hashlib import sha1
 import logging
+import random
 
 # TODO: implement peer interest algorithm
 
@@ -21,10 +25,11 @@ logging.basicConfig(level=logging.DEBUG)
 
 @PMD.Async_init
 class DownloadManager:
+    peer_list: list[PMD.Peer]
     bitfield: BitArray
 
-    async def __init__(self, torrent_path, path, peer_info_list, downloader_id):
-        self.downloader_id = downloader_id
+    async def __init__(self, peer_info_list, client_id, torrent_path = None, path = None):
+        self.client_id = client_id
 
         self.meta_info = Torrent.read(torrent_path)
 
@@ -53,12 +58,16 @@ class DownloadManager:
             self.file.write(b"\0")
             self.file.seek(0)
 
-        self.peer_list = list()
-        asyncio.create_task(self.initialize_peer_list(peer_info_list))
+        self.peer_list = await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list])
+        self.peer_list.sort(reverse=True)
+
+        self.downloaders = [self.peer_list[0:4:-1]]
+        self.current_optimistic_unchokes = []
+        self.optimistic_unchoke_scheduler_task = asyncio.create_task(self.optimistic_unchoke_scheduler())
+        self.choking_algorithm_task = asyncio.create_task(self.choking_algorithm())
 
 
-    # TODO: return function to generator
-    async def initialize_peer_list(self, peer_info_list):
+    async def extend_peer_list(self, peer_info_list):
         self.peer_list.extend(await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]))
 
 
@@ -84,8 +93,7 @@ class DownloadManager:
                 logging.debug(f"Piece number {piece.piece_index} has been downloaded and verified")
                 self.bitfield[piece.piece_index] = 1
                 self.priority_list.remove(piece)
-                for peer in self.peer_list:
-                    asyncio.create_task(peer.send_have_msg(piece.piece_index))
+                notify_peers_task = await asyncio.gather(*[peer.send_have_msg(piece.piece_index) for peer in self.peer_list])
             else:
                 piece.bytes_downloaded = 0
                 piece.blocks_to_download_counter = 0
@@ -99,8 +107,8 @@ class DownloadManager:
         return data
 
 
-    async def add_peer(self, reader, writer):
-        self.peer_list.append(await PMD.Peer(self, reader=reader,writer=writer))
+    async def add_peer(self, reader, writer, peer_id):
+        self.peer_list.append(await PMD.Peer(self, peer_id, reader=reader, writer=writer))
 
 
     def sort_priority_list(self):
@@ -110,7 +118,7 @@ class DownloadManager:
     def decrease_piece_priority(self, piece):
         priority_list_index = self.priority_list.index(piece)
         self.priority_list.pop(priority_list_index)
-        while piece.amount_in_swarm > self.priority_list[priority_list_index].amount_in_swarm and\
+        while piece.amount_in_swarm > self.priority_list[priority_list_index].amount_in_swarm and \
                 priority_list_index < len(self.priority_list): # doesn't compare to index +1 because og piece was popped
             priority_list_index  += 1
         self.priority_list.insert(priority_list_index, piece)
@@ -119,7 +127,53 @@ class DownloadManager:
     def increase_piece_priority(self, piece):
         priority_list_index = self.priority_list.index(piece)
         self.priority_list.pop(priority_list_index)
-        while piece.amount_in_swarm < self.priority_list[priority_list_index - 1].amount_in_swarm and\
+        while piece.amount_in_swarm < self.priority_list[priority_list_index - 1].amount_in_swarm and \
                 priority_list_index > 0:
             priority_list_index  -= 1
         self.priority_list.insert(priority_list_index, piece)
+
+
+    async def choking_algorithm(self):
+        while True:
+            self.peer_list.sort()
+            new_downloaders_count = 0
+            for peer in self.peer_list:
+                if peer > self.downloaders[0]:
+                    await peer.change_am_choking_state(False)
+                    if peer._peer_interested:
+                        for optimistic_unchoke in self.current_optimistic_unchokes:
+                            if peer == optimistic_unchoke[0]:
+                                optimistic_unchoke[1].cancel()
+                        self.downloaders.append(peer)
+                        new_downloaders_count += 1
+                        if len(self.downloaders) > 4:
+                            self.downloaders.pop(0)
+                        self.downloaders.sort()
+                else:
+                    await peer.change_am_choking_state(True)
+                if new_downloaders_count == 4:
+                    break
+            else:
+                while new_downloaders_count < 4:
+                    asyncio.create_task(optimistic_unchoke)
+                    new_downloaders_count += 1
+            await asyncio.sleep(10)
+
+
+    async def optimistic_unchoke(self):
+        curr_peer = random.choices(self.peer_list, weights=[peer.optimistic_unchoke_weight for peer in self.peer_list], k=1)[0]
+        await curr_peer.change_am_choking_state(False)
+        task = asyncio.create_task(self.optimistic_choke(curr_peer))
+        self.current_optimistic_unchokes.append((curr_peer, task))
+        await task
+
+
+    async def optimistic_choke(self, curr_peer):
+        await asyncio.sleep(30)
+        curr_peer.change_am_choking_state(True)
+
+
+    async def optimistic_unchoke_scheduler(self):
+        while True:
+            task = asyncio.create_task(self.optimistic_unchoke())
+            await task
