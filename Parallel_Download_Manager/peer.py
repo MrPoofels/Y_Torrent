@@ -59,9 +59,9 @@ class Peer:
         self._peer_interested = False
 
         self.client_upload_rate = 0
-        self.upload_rolling_window = collections.deque(0, maxlen=20)
+        self.upload_rolling_window = collections.deque([0,0], maxlen=2)
         self.client_download_rate = 0
-        self.download_rolling_window = collections.deque(0, maxlen=20)
+        self.download_rolling_window = collections.deque([0,0], maxlen=2)
 
         self.pending_requests = list()
         self.blocks_to_upload = collections.deque()
@@ -127,7 +127,6 @@ class Peer:
                 await self.return_pending_requests()
             case 1: # "un-choke"
                 await self.change_peer_choking_state(False)
-                self.request_loop_task = asyncio.create_task(self.request_loop())
             case 2: # "interested"
                 await self.change_peer_interested_state(True)
             case 3: # "not interested"
@@ -138,7 +137,7 @@ class Peer:
                     pass # implement connection shutdown/ blacklist for malicious peers
                 await self.update_model(self.download_manager.piece_list[piece_index])
                 self.download_manager.decrease_piece_priority(self.download_manager.piece_list[piece_index])
-                if self.select_piece() is not None:
+                if await self.select_piece() is not None:
                     await self.change_am_interested_state(True)
             case 5: # "bitfield"
                 flags = BitArray(bytes=payload, length=self.download_manager.meta_info.pieces)
@@ -148,7 +147,7 @@ class Peer:
                         await self.update_model(self.download_manager.piece_list[index])
                     index += 1
                 self.download_manager.sort_priority_list()
-                if self.select_piece() is not None:
+                if await self.select_piece() is not None:
                     await self.change_am_interested_state(True)
             case 6: # "request"
                 if not self._am_choking:
@@ -171,17 +170,16 @@ class Peer:
                     block.requested = False
                     # TODO: implement strike system to disconnect from malicious peers
                 else:
-                    await (self.download_manager.write_to_file(block, data, piece_index))
                     self.pending_requests.remove((piece_index, block))
+                    await q.append(asyncio.create_task(self.download_manager.write_to_file(block, data, piece_index)))
             case 8: # "cancel"
                 pass
                 # TODO: handle close messages in uploader as separate task, should get request info from self.blocks_to_upload to cancel it
-        await q.get()
 
 
     async def message_interpreter(self):
-        length = (await self.reader.read(4))
-        length = int.from_bytes(length, 'big')
+        msg = await self.reader.read(4)
+        length = int.from_bytes(msg, 'big')
         if length == 0:
             message_id = "-1"
             payload = ""
@@ -310,12 +308,20 @@ class Peer:
 
 
     async def recv_loop(self):
-        q = asyncio.Queue(5)
+        q = list()
+        q.append(asyncio.create_task(self.recv_tasks_cleanup(q)))
         while True:
             length, message_id, payload = await self.message_interpreter()
             self.download_rolling_window[0] += (length + 5)
-            task = asyncio.create_task(self.message_handler(length, message_id, payload, q))
-            await q.put(task)
+            await self.message_handler(length, message_id, payload, q)
+
+
+    async def recv_tasks_cleanup(self, q):
+        while True:
+            await asyncio.sleep(0.3)
+            for task in q:
+                if task.done():
+                    q.remove(task)
 
 
     async def update_model(self, piece):
@@ -338,3 +344,14 @@ class Peer:
     def __lt__(self, other):
         return self.client_download_rate < other.client_download_rate
 
+
+    def __eq__(self, other):
+        return self.client_download_rate == other.client_download_rate
+
+
+    def __le__(self, other):
+        return self.__lt__(other) or self.__eq__(other)
+
+
+    def __ge__(self, other):
+        return not self.__lt__(other) or self.__eq__(other)

@@ -1,10 +1,19 @@
 import bencodepy
 import asyncio
+import Parallel_Download_Manager as PMD
+import torf
 
 
+@PMD.Async_init
 class TrackerCommunication:
-    def __init__(self, announce, info_hash, peer_id, ip):
-        self.reader, self.writer = await asyncio.open_connection(announce, 6881)
+    async def __init__(self, announce, info_hash, peer_id, ip):
+        """
+
+        Args:
+            announce (torf._utils.URL):
+        """
+        print(announce[:-5])
+        self.reader, self.writer = await asyncio.open_connection(announce, 80)
         self.announce = announce
         self.info_hash = info_hash
         self.peer_id = peer_id

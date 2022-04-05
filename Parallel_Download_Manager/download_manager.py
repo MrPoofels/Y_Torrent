@@ -2,7 +2,7 @@ import asyncio
 import collections
 import random
 from typing import Tuple, Any, List
-
+import os
 import torf
 from bitstring import BitArray
 import Parallel_Download_Manager as PMD
@@ -29,13 +29,13 @@ class DownloadManager:
     peer_list: list[PMD.Peer]
     bitfield: BitArray
 
-    async def __init__(self, ip, client_id, torrent_path = None, path = None):
+    async def __init__(self, ip, client_id, torrent_path = None, path = None, peer_info_list = None):
         self.client_id = client_id
 
         self.meta_info = Torrent.read(torrent_path)
 
         self.piece_list = [PMD.Piece(index, self.meta_info.piece_size) for index in range(len(self.meta_info.hashes) - 1)]
-        self.piece_list.append(PMD.Piece(self.meta_info.pieces - 1, self.meta_info.size % self.meta_info.piece_size))
+        self.piece_list.append(PMD.Piece(self.meta_info.pieces - 1, self.meta_info.files[0].size % self.meta_info.piece_size))
         self.bitfield = BitArray(uint=0, length=self.meta_info.pieces)
 
         self.bytes_downloaded = 0
@@ -57,26 +57,26 @@ class DownloadManager:
                     self.bitfield[piece.piece_index] = '0b1'
                     piece.blocks_to_request = None
                     if piece.piece_index == (self.meta_info.pieces - 1):
-                        piece_size = self.meta_info.size % self.meta_info.piece_size
+                        piece_size = self.meta_info.files[0].size % self.meta_info.piece_size
                     else:
                         piece_size = self.meta_info.piece_size
                     piece.bytes_downloaded = piece_size
                     self.bytes_downloaded += piece_size
-        if not self.file.seek(0, 2) == self.meta_info.size:
-            self.file.seek(self.meta_info.size - 1)
+        if not self.file.seek(0, 2) == self.meta_info.files[0].size:
+            self.file.seek(self.meta_info.files[0].size - 1)
             self.file.write(b"\0")
             self.file.seek(0)
 
-        self.tracker_communication = tracker_communication.TrackerCommunication(self.meta_info.trackers[0], self.meta_info.infohash, self.client_id, ip)
-        await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.size - self.bytes_downloaded, "started")
-        peer_info_list = await self.tracker_communication.tracker_response()
+        # self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip)
+        # await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.files[0].size - self.bytes_downloaded, "started")
+        # peer_info_list = await self.tracker_communication.tracker_response()
 
         self.peer_list = await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list])
         self.peer_list.sort(reverse=True)
 
-        self.downloaders = [self.peer_list[0:4:-1]]
+        self.downloaders = []
         self.current_optimistic_unchokes = []
-        self.optimistic_unchoke_scheduler_task = asyncio.create_task(self.optimistic_unchoke_scheduler())
+        # self.optimistic_unchoke_scheduler_task = asyncio.create_task(self.optimistic_unchoke_scheduler())
         self.choking_algorithm_task = asyncio.create_task(self.choking_algorithm())
 
 
@@ -93,11 +93,12 @@ class DownloadManager:
         self.file.write(data)
         logging.debug("wrote some data to file")
         await self.determine_piece_complete(curr_piece, (piece_index * self.meta_info.piece_size))
+        await q.get()
 
 
     async def determine_piece_complete(self, piece, file_pos):
         if piece.piece_index == (self.meta_info.pieces - 1):
-            piece_size = self.meta_info.size % self.meta_info.piece_size
+            piece_size = self.meta_info.files[0].size % self.meta_info.piece_size
         else:
             piece_size = self.meta_info.piece_size
         if piece.bytes_downloaded == piece_size:
@@ -150,10 +151,14 @@ class DownloadManager:
 
     async def choking_algorithm(self):
         while True:
+            if not self.peer_list:
+                await asyncio.sleep(0.1)
+                continue
             self.peer_list.sort()
+            self.downloaders = [self.peer_list[0]] # [0:4:-1]
             new_downloaders_count = 0
             for peer in self.peer_list:
-                if peer > self.downloaders[0]:
+                if peer >= self.downloaders[0]:
                     await peer.change_am_choking_state(False)
                     if peer._peer_interested:
                         for optimistic_unchoke in self.current_optimistic_unchokes:
@@ -166,17 +171,18 @@ class DownloadManager:
                         self.downloaders.sort()
                 else:
                     await peer.change_am_choking_state(True)
-                if new_downloaders_count == 4:
+                if new_downloaders_count == 1:
                     break
-            else:
-                while new_downloaders_count < 4:
-                    asyncio.create_task(optimistic_unchoke)
-                    new_downloaders_count += 1
+            # else:
+            #     while new_downloaders_count < 4:
+            #         asyncio.create_task(optimistic_unchoke)
+            #         new_downloaders_count += 1
             await asyncio.sleep(10)
 
 
     async def optimistic_unchoke(self):
-        curr_peer = random.choices(self.peer_list, weights=[peer.optimistic_unchoke_weight for peer in self.peer_list], k=1)[0]
+        test = [peer.optimistic_unchoke_weight for peer in self.peer_list]
+        curr_peer = random.choices(self.peer_list, weights=test, k=1)[0]
         await curr_peer.change_am_choking_state(False)
         task = asyncio.create_task(self.optimistic_choke(curr_peer))
         self.current_optimistic_unchokes.append((curr_peer, task))
@@ -189,6 +195,12 @@ class DownloadManager:
 
 
     async def optimistic_unchoke_scheduler(self):
+        while True:
+            if not self.peer_list:
+                await asyncio.sleep(0.1)
+                continue
+            else:
+                break
         while True:
             task = asyncio.create_task(self.optimistic_unchoke())
             await task

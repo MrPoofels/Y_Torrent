@@ -33,5 +33,5 @@ async def __client_connected_cb(reader, writer):
     asyncio.current_task().cancel()
 
 
-async def create_new_torrent(client_id, torrent_path, path):
-    torrents_list.append((await Parallel_Download_Manager.DownloadManager(host, client_id, torrent_path, path)))
+async def create_new_torrent(client_id, torrent_path, path, peer_info_list=None):
+    torrents_list.append((await Parallel_Download_Manager.DownloadManager(host, client_id, torrent_path, path, peer_info_list)))
