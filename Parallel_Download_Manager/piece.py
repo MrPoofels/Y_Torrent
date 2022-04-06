@@ -14,6 +14,7 @@ class Piece:
         self.initiate_block_list(piece_len)
 
     def initiate_block_list(self, piece_len):
+        self.blocks_to_request = list()
         full_blocks_amount, last_block_len = divmod(piece_len, 16000)
         self.blocks_to_request.extend([PMD.Block(i * 16000, 16000) for i in range(full_blocks_amount)])
         if not last_block_len == 0:

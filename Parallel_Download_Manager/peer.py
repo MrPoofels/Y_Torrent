@@ -23,9 +23,9 @@ HAVE_MESSAGE_ID = (4).to_bytes(1, 'big')
 BITFIELD_MESSAGE_BASE_LENGTH = 1
 BITFIELD_MESSAGE_ID = (5).to_bytes(1, 'big')
 
-CHOKE_MESSAGE_LENGTH = (1).to_bytes(1, 'big')
+CHOKE_MESSAGE_LENGTH = (1).to_bytes(4, 'big')
 
-INTERESTED_MESSAGE_LENGTH = (1).to_bytes(1, 'big')
+INTERESTED_MESSAGE_LENGTH = (1).to_bytes(4, 'big')
 
 # EXPAND: determine dynamically
 DEFAULT_BLOCK_LEN = 16000
@@ -134,9 +134,10 @@ class Peer:
             case 4: # "have"
                 piece_index = int.from_bytes(payload, "big")
                 if piece_index > (len(self.download_manager.piece_list) - 1):
-                    pass # implement connection shutdown/ blacklist for malicious peers
+                    return # implement connection shutdown/ blacklist for malicious peers
                 await self.update_model(self.download_manager.piece_list[piece_index])
-                self.download_manager.decrease_piece_priority(self.download_manager.piece_list[piece_index])
+                if self.download_manager.piece_list[piece_index] in self.download_manager.priority_list:
+                    self.download_manager.decrease_piece_priority(self.download_manager.piece_list[piece_index])
                 if await self.select_piece() is not None:
                     await self.change_am_interested_state(True)
             case 5: # "bitfield"
@@ -161,17 +162,18 @@ class Peer:
                     if (piece_index, block) == request:
                         block = request[1]
                         break
-                    else:
-                        block = None
+                else:
+                    block = None
                 if block is None:
                     pass
                     #strike system goes here too
                 elif block.length != len(data):
                     block.requested = False
+                    self.pending_requests.remove((piece_index, block))
                     # TODO: implement strike system to disconnect from malicious peers
                 else:
                     self.pending_requests.remove((piece_index, block))
-                    await q.append(asyncio.create_task(self.download_manager.write_to_file(block, data, piece_index)))
+                    q.append(asyncio.create_task(self.download_manager.write_to_file(block, data, piece_index)))
             case 8: # "cancel"
                 pass
                 # TODO: handle close messages in uploader as separate task, should get request info from self.blocks_to_upload to cancel it
@@ -245,7 +247,7 @@ class Peer:
         if not self._am_choking:
             self.optimistic_unchoke_weight = 0
             if self._peer_interested:
-                if self.upload_loop_task.cancelled() or self.upload_loop_task is None:
+                if self.upload_loop_task is None or self.upload_loop_task.cancelled():
                     self.upload_loop_task = asyncio.create_task(self.upload_loop())
         else:
             if not (self.upload_loop_task.cancelled() or self.upload_loop_task is None):

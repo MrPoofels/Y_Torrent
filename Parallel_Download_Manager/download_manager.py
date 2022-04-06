@@ -93,7 +93,6 @@ class DownloadManager:
         self.file.write(data)
         logging.debug("wrote some data to file")
         await self.determine_piece_complete(curr_piece, (piece_index * self.meta_info.piece_size))
-        await q.get()
 
 
     async def determine_piece_complete(self, piece, file_pos):
