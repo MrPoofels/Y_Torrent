@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="">
+    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 8&#10;repeatadly chooses piece &#10;6/4/2022">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/piece.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/piece.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Test_files_2/archvalemeleeonly2.mp4" beforeDir="false" afterPath="$PROJECT_DIR$/Test_files_2/archvalemeleeonly2.mp4" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Torrents_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Torrents_Manager.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -108,7 +108,14 @@
       <option name="project" value="LOCAL" />
       <updated>1649149263750</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="commit 8&#10;repeatadly chooses piece &#10;6/4/2022">
+      <created>1649265840207</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1649265840208</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -139,7 +146,8 @@
     <MESSAGE value="commit 4&#10;Peer now ready for choking command&#10;3/4/2022" />
     <MESSAGE value="commit 5&#10;choking algorithm ready&#10;5/4/2022" />
     <MESSAGE value="commit 6&#10;ready for real world test&#10;5/4/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit 6&#10;ready for real world test&#10;5/4/2022" />
+    <MESSAGE value="commit 8&#10;repeatadly chooses piece &#10;6/4/2022" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit 8&#10;repeatadly chooses piece &#10;6/4/2022" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -148,11 +156,6 @@
           <url>file://$PROJECT_DIR$/tracker_communication.py</url>
           <line>15</line>
           <option name="timeStamp" value="8" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>182</line>
-          <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
@@ -165,40 +168,61 @@
           <option name="timeStamp" value="16" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <condition expression="curr_piece is None" language="Python" />
+          <condition expression="curr_piece.piece_index == 18" language="Python" />
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>278</line>
-          <option name="timeStamp" value="30" />
+          <line>280</line>
+          <option name="timeStamp" value="59" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>237</line>
-          <option name="timeStamp" value="31" />
+          <line>286</line>
+          <option name="timeStamp" value="63" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
+          <line>278</line>
+          <option name="timeStamp" value="65" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
+          <line>269</line>
+          <option name="timeStamp" value="74" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <condition expression="self.download_manager.client_id == 'Leecher1'.ljust(20)" language="Python" />
+          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
+          <line>218</line>
+          <option name="timeStamp" value="75" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>133</line>
-          <option name="timeStamp" value="57" />
+          <line>169</line>
+          <option name="timeStamp" value="78" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <condition expression="piece.piece_index == 7" language="Python" />
+          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
+          <line>168</line>
+          <option name="timeStamp" value="79" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
+          <line>173</line>
+          <option name="timeStamp" value="81" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <condition expression="message_id == 6" language="Python" />
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>300</line>
-          <option name="timeStamp" value="58" />
+          <line>317</line>
+          <option name="timeStamp" value="88" />
         </line-breakpoint>
       </breakpoints>
-      <default-breakpoints>
-        <breakpoint type="python-exception">
-          <properties notifyOnTerminate="true" exception="BaseException">
-            <option name="notifyOnTerminate" value="true" />
-          </properties>
-        </breakpoint>
-      </default-breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="self.peer_id" language="Python" />
         <watch expression="self.client_id" language="Python" />
+        <watch expression="self.peer_list" language="Python" />
+        <watch expression="self.downloaders" language="Python" />
+        <watch expression="self.download_manager.client_id" language="Python" />
       </configuration>
     </watches-manager>
   </component>

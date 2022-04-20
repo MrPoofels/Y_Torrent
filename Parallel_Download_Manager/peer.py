@@ -66,7 +66,7 @@ class Peer:
         self.pending_requests = list()
         self.blocks_to_upload = collections.deque()
 
-        self.optimistic_unchoke_weight = 3
+        self.optimistic_unchoke_weight = 0
 
         self.reader = reader
         self.writer = writer
@@ -173,6 +173,7 @@ class Peer:
                     # TODO: implement strike system to disconnect from malicious peers
                 else:
                     self.pending_requests.remove((piece_index, block))
+                    self.download_rolling_window[0] += block.length
                     q.append(asyncio.create_task(self.download_manager.write_to_file(block, data, piece_index)))
             case 8: # "cancel"
                 pass
@@ -277,6 +278,7 @@ class Peer:
             if curr_piece is None:
                 uninterested = asyncio.create_task(self.change_am_interested_state(False))
                 await uninterested
+            logging.debug(f"Piece number {curr_piece.piece_index} has been selected")
             while True:
                 while len(self.pending_requests) >= PENDING_REQUEST_MAXIMUM:
                     await asyncio.sleep(1)
@@ -296,9 +298,8 @@ class Peer:
 
     async def select_piece(self):
         for piece in self.download_manager.priority_list:
-            if piece.blocks_to_request:
+            if piece.select_block() is not None:
                 if piece in self.model:
-                    logging.debug(f"Piece number {piece.piece_index} has been selected")
                     return piece
         return None
 
@@ -314,7 +315,6 @@ class Peer:
         q.append(asyncio.create_task(self.recv_tasks_cleanup(q)))
         while True:
             length, message_id, payload = await self.message_interpreter()
-            self.download_rolling_window[0] += (length + 5)
             await self.message_handler(length, message_id, payload, q)
 
 
@@ -344,11 +344,17 @@ class Peer:
 
 
     def __lt__(self, other):
-        return self.client_download_rate < other.client_download_rate
+        if self.download_manager.seeder_mode:
+            return self.client_upload_rate < other.client_upload_rate
+        else:
+            return self.client_download_rate < other.client_download_rate
 
 
     def __eq__(self, other):
-        return self.client_download_rate == other.client_download_rate
+        if self.download_manager.seeder_mode:
+            return self.client_upload_rate == other.client_upload_rate
+        else:
+            return self.client_download_rate == other.client_download_rate
 
 
     def __le__(self, other):

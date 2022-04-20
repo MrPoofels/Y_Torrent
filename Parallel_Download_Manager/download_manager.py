@@ -11,6 +11,7 @@ from hashlib import sha1
 import logging
 import random
 import tracker_communication
+import concurrent.futures
 
 # TODO: implement peer interest algorithm
 
@@ -50,22 +51,26 @@ class DownloadManager:
             self.file = open(path, 'rb+')
             self.file.seek(0)
             for piece in self.piece_list:
+                if piece.piece_index == (self.meta_info.pieces - 1):
+                    piece_size = self.meta_info.files[0].size % self.meta_info.piece_size
+                else:
+                    piece_size = self.meta_info.piece_size
                 file_piece = self.file.read(self.meta_info.piece_size)
                 curr_hash = sha1(file_piece).digest()
                 if curr_hash == self.meta_info.hashes[piece.piece_index]:
                     self.priority_list.remove(piece)
                     self.bitfield[piece.piece_index] = '0b1'
                     piece.blocks_to_request = None
-                    if piece.piece_index == (self.meta_info.pieces - 1):
-                        piece_size = self.meta_info.files[0].size % self.meta_info.piece_size
-                    else:
-                        piece_size = self.meta_info.piece_size
                     piece.bytes_downloaded = piece_size
                     self.bytes_downloaded += piece_size
         if not self.file.seek(0, 2) == self.meta_info.files[0].size:
             self.file.seek(self.meta_info.files[0].size - 1)
             self.file.write(b"\0")
             self.file.seek(0)
+        if self.priority_list:
+            self.seeder_mode = False
+        else:
+            self.seeder_mode = True
 
         # self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip)
         # await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.files[0].size - self.bytes_downloaded, "started")
@@ -75,8 +80,7 @@ class DownloadManager:
         self.peer_list.sort(reverse=True)
 
         self.downloaders = []
-        self.current_optimistic_unchokes = []
-        # self.optimistic_unchoke_scheduler_task = asyncio.create_task(self.optimistic_unchoke_scheduler())
+        self.optimistic_unchoke_timer_task = asyncio.create_task(self.optimistic_unchoke_timer())
         self.choking_algorithm_task = asyncio.create_task(self.choking_algorithm())
 
 
@@ -107,7 +111,9 @@ class DownloadManager:
                 logging.debug(f"Piece number {piece.piece_index} has been downloaded and verified")
                 self.bitfield[piece.piece_index] = 1
                 self.priority_list.remove(piece)
-                notify_peers_task = await asyncio.gather(*[peer.send_have_msg(piece.piece_index) for peer in self.peer_list])
+                if not self.priority_list:
+                    self.seeder_mode = True
+                await asyncio.gather(*[peer.send_have_msg(piece.piece_index) for peer in self.peer_list])
             else:
                 piece.bytes_downloaded = 0
                 piece.blocks_to_download_counter = 0
@@ -150,56 +156,70 @@ class DownloadManager:
 
     async def choking_algorithm(self):
         while True:
-            if not self.peer_list:
-                await asyncio.sleep(0.1)
-                continue
-            self.peer_list.sort()
-            self.downloaders = [self.peer_list[0]] # [0:4:-1]
+            if self.peer_list:
+                break
+            await asyncio.sleep(0.1)
+        while True:
+            self.peer_list.sort(reverse=True)
             new_downloaders_count = 0
+            self.downloaders.append(self.peer_list[0])
+
             for peer in self.peer_list:
+
                 if peer >= self.downloaders[0]:
                     await peer.change_am_choking_state(False)
                     if peer._peer_interested:
-                        for optimistic_unchoke in self.current_optimistic_unchokes:
-                            if peer == optimistic_unchoke[0]:
-                                optimistic_unchoke[1].cancel()
-                        self.downloaders.append(peer)
                         new_downloaders_count += 1
-                        if len(self.downloaders) > 4:
-                            self.downloaders.pop(0)
-                        self.downloaders.sort()
+                        if peer not in self.downloaders:
+                            self.downloaders.append(peer)
+                            if len(self.downloaders) > 4:
+                                await self.downloaders[0].change_am_choking_state(True)
+                                self.downloaders.pop(0)
+                            self.downloaders.sort(reverse=True)
                 else:
                     await peer.change_am_choking_state(True)
-                if new_downloaders_count == 1:
+                if self.seeder_mode:
+                    if peer.client_upload_rate == 0:
+                        break
+                else:
+                    if peer.client_download_rate == 0:
+                        break
+                if new_downloaders_count == 4:
                     break
-            # else:
-            #     while new_downloaders_count < 4:
-            #         asyncio.create_task(optimistic_unchoke)
-            #         new_downloaders_count += 1
-            await asyncio.sleep(10)
 
-
-    async def optimistic_unchoke(self):
-        test = [peer.optimistic_unchoke_weight for peer in self.peer_list]
-        curr_peer = random.choices(self.peer_list, weights=test, k=1)[0]
-        await curr_peer.change_am_choking_state(False)
-        task = asyncio.create_task(self.optimistic_choke(curr_peer))
-        self.current_optimistic_unchokes.append((curr_peer, task))
-        await task
-
-
-    async def optimistic_choke(self, curr_peer):
-        await asyncio.sleep(30)
-        curr_peer.change_am_choking_state(True)
-
-
-    async def optimistic_unchoke_scheduler(self):
-        while True:
-            if not self.peer_list:
-                await asyncio.sleep(0.1)
-                continue
+            if len(self.peer_list) < 4:
+                number_of_peers = len(self.peer_list)
             else:
-                break
+                number_of_peers = 4
+            while new_downloaders_count < number_of_peers:
+                peer = await self.unchoke_random_peer()
+                if peer is None:
+                    break
+                self.downloaders.append(peer)
+                if len(self.downloaders) > 4:
+                    await self.downloaders[0].change_am_choking_state(True)
+                    self.downloaders.pop(0)
+                self.downloaders.sort(reverse=True)
+                new_downloaders_count += 1
+            await asyncio.sleep(2)
+
+
+    async def unchoke_random_peer(self):
+        weight_list = [peer.optimistic_unchoke_weight for peer in self.peer_list]
+        try:
+            curr_peer = random.choices(self.peer_list, weights=weight_list, k=1)[0]
+        except ValueError:
+            return None
+        await curr_peer.change_am_choking_state(False)
+        return curr_peer
+
+
+    async def optimistic_unchoke_timer(self):
         while True:
-            task = asyncio.create_task(self.optimistic_unchoke())
-            await task
+            if len(self.peer_list) > 1:
+                break
+            await asyncio.sleep(0.1)
+        while True:
+            curr_peer = await self.unchoke_random_peer()
+            await asyncio.sleep(30)
+            await curr_peer.change_am_choking_state(True)
