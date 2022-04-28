@@ -13,8 +13,6 @@ import random
 import tracker_communication
 import concurrent.futures
 
-# TODO: implement peer interest algorithm
-
 
 PEER_ID_INDEX = 0
 PEER_IP_INDEX = 1
@@ -30,10 +28,14 @@ class DownloadManager:
     peer_list: list[PMD.Peer]
     bitfield: BitArray
 
-    async def __init__(self, ip, client_id, torrent_path = None, path = None, peer_info_list = None):
+    async def __init__(self, ip, client_id, content_path, torrent_path = None):
         self.client_id = client_id
 
         self.meta_info = Torrent.read(torrent_path)
+
+        self.file_list = list()
+        for file in self.meta_info.files:
+            self.file_list.append(PMD.FileManager(os.path.join(content_path, file.path), self))
 
         self.piece_list = [PMD.Piece(index, self.meta_info.piece_size) for index in range(len(self.meta_info.hashes) - 1)]
         self.piece_list.append(PMD.Piece(self.meta_info.pieces - 1, self.meta_info.files[0].size % self.meta_info.piece_size))
@@ -46,9 +48,9 @@ class DownloadManager:
         self.priority_list.sort()
 
         try:
-            self.file = open(path, 'xb+')
+            self.file = open(content_path, 'xb+')
         except FileExistsError:
-            self.file = open(path, 'rb+')
+            self.file = open(content_path, 'rb+')
             self.file.seek(0)
             for piece in self.piece_list:
                 if piece.piece_index == (self.meta_info.pieces - 1):
@@ -72,9 +74,9 @@ class DownloadManager:
         else:
             self.seeder_mode = True
 
-        # self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip)
-        # await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.files[0].size - self.bytes_downloaded, "started")
-        # peer_info_list = await self.tracker_communication.tracker_response()
+        self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip)
+        await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.files[0].size - self.bytes_downloaded, "started")
+        peer_info_list = await self.tracker_communication.tracker_response()
 
         self.peer_list = await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list])
         self.peer_list.sort(reverse=True)

@@ -6,6 +6,7 @@ import socket
 import _sha1
 import logging
 import collections
+import bencodepy
 
 
 async def main():

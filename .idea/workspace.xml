@@ -4,12 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 8&#10;repeatadly chooses piece &#10;6/4/2022">
+    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 9&#10;seeder sends malformed packets but code runs smoothly nonetheless &#10;20/4/2022">
+      <change afterPath="$PROJECT_DIR$/Parallel_Download_Manager/file_manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Test_files_2/archvalemeleeonly2.mp4" beforeDir="false" afterPath="$PROJECT_DIR$/Test_files_2/archvalemeleeonly2.mp4" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Torrents_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Torrents_Manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,7 +117,14 @@
       <option name="project" value="LOCAL" />
       <updated>1649265840208</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="commit 9&#10;seeder sends malformed packets but code runs smoothly nonetheless &#10;20/4/2022">
+      <created>1650479052245</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1650479052245</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -147,16 +156,12 @@
     <MESSAGE value="commit 5&#10;choking algorithm ready&#10;5/4/2022" />
     <MESSAGE value="commit 6&#10;ready for real world test&#10;5/4/2022" />
     <MESSAGE value="commit 8&#10;repeatadly chooses piece &#10;6/4/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit 8&#10;repeatadly chooses piece &#10;6/4/2022" />
+    <MESSAGE value="commit 9&#10;seeder sends malformed packets but code runs smoothly nonetheless &#10;20/4/2022" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit 9&#10;seeder sends malformed packets but code runs smoothly nonetheless &#10;20/4/2022" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tracker_communication.py</url>
-          <line>15</line>
-          <option name="timeStamp" value="8" />
-        </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
           <line>117</line>
@@ -196,17 +201,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>169</line>
+          <line>173</line>
           <option name="timeStamp" value="78" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>168</line>
+          <line>172</line>
           <option name="timeStamp" value="79" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>173</line>
+          <line>177</line>
           <option name="timeStamp" value="81" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">

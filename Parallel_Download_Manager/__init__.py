@@ -3,3 +3,4 @@ from Parallel_Download_Manager.piece import Piece
 from Parallel_Download_Manager.block import Block
 from Parallel_Download_Manager.peer import Peer
 from Parallel_Download_Manager.download_manager import DownloadManager
+from Parallel_Download_Manager.file_manager import FileManager
