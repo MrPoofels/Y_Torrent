@@ -18,6 +18,7 @@ class TrackerCommunication:
         self.info_hash = info_hash
         self.peer_id = peer_id
         self.ip = ip
+        self.interval = None
 
     async def http_GET(self, uploaded, downloaded, left, event=None):
         message = self.announce + f"?info_hash={self.info_hash}&peer_id={self.peer_id}&port=6881&uploaded={uploaded}&downloaded={downloaded}&left={left}"
@@ -30,6 +31,7 @@ class TrackerCommunication:
     async def tracker_response(self):
         data = await self.reader.read(-1)
         response_dict = bencodepy.decode(data)
+        self.interval = response_dict["interval"]
         peer_info_list = []
         for peer in response_dict["peers"]:
             peer_info_list.append((peer["peer_id"], peer["ip"], peer["port"]))

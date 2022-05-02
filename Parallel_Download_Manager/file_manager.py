@@ -16,16 +16,14 @@ logging.basicConfig(level=logging.DEBUG)
 
 @PMD.Async_init
 class FileManager:
-    async def __init__(self, file_path, file_size, download_manager, hash_list):
+    async def __init__(self, file_path, file_size, download_manager, hash_list, global_piece_index_start):
         self.download_manager = download_manager
         self.file_size = file_size
         self.hash_list = hash_list
         self.piece_list = [PMD.Piece(index, self.download_manager.meta_info.piece_size) for index in range(len(hash_list) - 1)]
         self.piece_list.append(PMD.Piece(len(hash_list) - 1, self.file_size % self.download_manager.meta_info.piece_size))
         self.bitfield = BitArray(uint=0, length=len(hash_list))
-
-        self.priority_list = [piece for piece in self.piece_list]
-        self.priority_list.sort()
+        self.global_piece_index_start = global_piece_index_start
 
         try:
             self.file = open(file_path, 'xb+')
@@ -79,41 +77,19 @@ class FileManager:
             if curr_hash == self.hash_list[internal_piece_index]:
                 logging.info(f"Piece number {piece.piece_index} in file {self.file.name} (internal index: {internal_piece_index}) has been downloaded and verified")
                 self.bitfield[internal_piece_index] = 1
-                self.priority_list.remove(piece)
-                if not self.priority_list:
-                    self.seeder_mode = True
-                await asyncio.gather(*[peer.send_have_msg(piece.piece_index) for peer in self.peer_list])
+                self.download_manager.priority_list.remove(piece)
+                if not self.download_manager.priority_list:
+                    self.download_manager.seeder_mode = True
+                await asyncio.gather(*[peer.send_have_msg(piece.piece_index) for peer in self.download_manager.peer_list])
             else:
                 piece.bytes_downloaded = 0
                 piece.blocks_to_download_counter = 0
                 piece.initiate_block_list(self.download_manager.meta_info.piece_size)
-                self.bytes_downloaded -= piece_size
+                self.download_manager.bytes_downloaded -= piece_size
                 logging.warning(f"Piece number {piece.piece_index} in file {self.file.name} (internal index: {internal_piece_index}) did not pass verification")
 
 
-    async def read_from_file(self, piece_index, block):
-        self.file.seek((piece_index * self.download_manager.meta_info.piece_size) + block.begin)
+    async def read_from_file(self, internal_piece_index, block):
+        self.file.seek((internal_piece_index * self.download_manager.meta_info.piece_size) + block.begin)
         data = self.file.read(block.length)
         return data
-
-
-    def sort_priority_list(self):
-        self.priority_list.sort()
-
-
-    def decrease_piece_priority(self, piece):
-        priority_list_index = self.priority_list.index(piece)
-        self.priority_list.pop(priority_list_index)
-        while piece.amount_in_swarm > self.priority_list[priority_list_index].amount_in_swarm and \
-                priority_list_index < len(self.priority_list): # doesn't compare to index +1 because og piece was popped
-            priority_list_index  += 1
-        self.priority_list.insert(priority_list_index, piece)
-
-
-    def increase_piece_priority(self, piece):
-        priority_list_index = self.priority_list.index(piece)
-        self.priority_list.pop(priority_list_index)
-        while piece.amount_in_swarm < self.priority_list[priority_list_index - 1].amount_in_swarm and \
-                priority_list_index > 0:
-            priority_list_index  -= 1
-        self.priority_list.insert(priority_list_index, piece)
