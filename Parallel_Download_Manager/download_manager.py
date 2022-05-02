@@ -81,11 +81,13 @@ class DownloadManager:
         # else:
         #     self.seeder_mode = True
 
-        self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip)
+        self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip, self)
         await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.size - self.bytes_downloaded, "started")
-        peer_info_list = await self.tracker_communication.tracker_response()
+        peer_info_list, interval = await self.tracker_communication.interpret_tracker_response()
+        self.tracker_communication.periodic_GET_task = asyncio.create_task(self.tracker_communication.periodic_GET(interval))
 
-        self.peer_list = await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list])
+        self.peer_list = list()
+        await self.extend_peer_list(peer_info_list)
         self.peer_list.sort(reverse=True)
 
         self.downloaders = []
