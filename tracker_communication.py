@@ -23,11 +23,13 @@ class TrackerCommunication:
         self.download_manager = download_manager
         self.periodic_GET_task = None
 
-    async def http_GET(self, uploaded, downloaded, left, event=None):
-        message = self.announce + f"?info_hash={self.info_hash}&peer_id={self.peer_id}&port=6881&uploaded={uploaded}&downloaded={downloaded}&left={left}&compact=0"
+    async def http_GET(self, uploaded, downloaded, left=None, event=None):
+        message = self.announce + f"?info_hash={self.info_hash}&peer_id={self.peer_id}&ip={self.ip}&port=6881&uploaded={uploaded}&downloaded={downloaded}"
+        if left is not None:
+            message += f"&left={left}"
         if event is not None:
             message += f"&event={event}"
-        message += f"&ip={self.ip}"
+        message += f"&compact=0"
         self.writer.write(message.encode())
         await self.writer.drain()
 

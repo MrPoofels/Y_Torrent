@@ -3,8 +3,10 @@ import socket
 from typing import List, Any
 import logging
 
-import torf
+from torf import Magnet
 import Parallel_Download_Manager
+import Parallel_Download_Manager as PDM
+import tracker_communication
 
 torrents_list: list[Parallel_Download_Manager.DownloadManager] = list()  # list of DownloadManager objects
 host = socket.gethostname()
@@ -36,3 +38,13 @@ async def __client_connected_cb(reader, writer):
 async def create_new_torrent(client_id, torrent_path, path):
     task = Parallel_Download_Manager.DownloadManager(host, client_id, path, torrent_path)
     torrents_list.append(await task)
+
+
+async def magnet_link_handler(magnet_link):
+    magnet = Magnet.from_string(magnet_link)
+    for tracker in magnet.tr:
+        if tracker[:4] == 'http':
+            chosen_tr = tracker
+    tracker_connection = await tracker_communication.TrackerCommunication(chosen_tr, bytes.fromhex(magnet.infohash), 'test', host, None)
+    await tracker_connection.http_GET(0, 0, event="started")
+    peer_info_list, interval = await tracker_connection.interpret_tracker_response()
