@@ -1,0 +1,115 @@
+# Define background color Template
+<BackgroundColor@Widget>
+    background_color: 1, 1, 1, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+<BackgroundLabel@Label+BackgroundColor>
+    background_color: 0, 0, 0, 0
+    # Default the background color for this label
+    # to r 0, g 0, b 0, a 0
+
+[ToolbarButton@Button]:
+	background_normal: ''
+	background_color: 1, 1, 1, 1
+	size_hint: 0.1, 1
+	color: 0, 0, 0, 1
+
+	text: '%s' % ctx.text
+
+[ScrollButton@Button]:
+	background_normal: ''
+	background_color: 1, 1, 1, 1
+	color: 0, 0, 0, 1
+
+	text: '%s' % ctx.text
+
+<HomeScreen>:
+
+	layout_content: layout_content
+
+    BoxLayout:
+        orientation: 'vertical'
+
+        BackgroundLabel:
+            text: 'YTorrent'
+            background_color: 66/255, 160/255, 82/255, 1
+            size_hint: 1, 0.1
+
+		StackLayout:
+			size_hint: 1, 0.1
+
+			canvas:
+				Color:
+					rgb: 170/255, 170/255, 170/255
+				Rectangle:
+					size: self.size
+					pos: self.pos
+
+			ToolbarButton:
+                text: 'button 1'
+
+            ToolbarButton:
+                text: 'button 2'
+
+            ToolbarButton:
+                text: 'button 3'
+
+            ToolbarButton:
+                text: 'button 4'
+        BoxLayout:
+        	orientation: 'horizontal'
+        	spacing: 40
+
+        	BackgroundLabel:
+        		background_color: 1, 1, 1, 1
+        		text: 'test'
+        		size_hint: 0.3, 1
+
+        	ScrollView:
+        		do_scroll_x: False
+    			do_scroll_y: True
+    			size: self.size
+            	bar_color: [122, 122, 122, 1]
+            	bar_width: 12
+            	bar_margin: -40
+
+    			GridLayout:
+    				id: layout_content
+    				padding: 10, 10
+    				spacing: 10
+    				cols: 1
+    				size_hint_y: None
+    				row_default_height: '175dp'
+                	row_force_default: True
+
+    				ScrollButton:
+                		text: 'button 1'
+
+					ScrollButton:
+						text: 'button 2'
+
+					ScrollButton:
+						text: 'button 3'
+
+					ScrollButton:
+						text: 'button 4'
+
+					ScrollButton:
+                		text: 'button 5'
+
+					ScrollButton:
+						text: 'button 6'
+
+					ScrollButton:
+						text: 'button 7'
+
+					ScrollButton:
+						text: 'button 8'
+
+        	Label:
+        		size_hint: 0, 1

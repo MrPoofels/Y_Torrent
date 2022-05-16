@@ -111,9 +111,9 @@ class Peer:
         peer_info_hash = await self.reader.read(20)
         recv_peer_id = (await self.reader.read(20)).decode()
         if protocol_str == "BitTorrent protocol":
-            if True:  # peer_info_hash == bytes.fromhex(self.download_manager.meta_info.infohash):
+            if peer_info_hash == bytes.fromhex(self.download_manager.meta_info.infohash):
                 if recv_peer_id == peer_id:
-                    logging.debug(f"{self.download_manager.client_id} has accepted the handshake")
+                    logging.info(f"accepted the handshake")
                     return
         self.writer.close()
         await self.writer.wait_closed()
