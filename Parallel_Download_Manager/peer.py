@@ -1,7 +1,7 @@
 import asyncio
 import queue
 import socket
-import bencodepy
+
 import bitstring
 from bitstring import BitArray # docs: https://bitstring.readthedocs.io/en/latest/
 import Parallel_Download_Manager as PMD
@@ -52,7 +52,6 @@ class Peer:
         self.download_manager = download_manager
 
         self.model = list()
-        self.extension_dict = dict()
 
         self._am_choking = True
         self._am_interested = False
@@ -78,8 +77,7 @@ class Peer:
             await self.send_handshake()
         # await self.writer.drain()
 
-        if isinstance(download_manager, PMD.DownloadManager):
-            await self.send_bitfield_msg()
+        await self.send_bitfield_msg()
 
         self.receive_loop_task = asyncio.create_task(self.recv_loop())
         self.request_loop_task = None # will contain a task for request_loop when an un-choke happens
@@ -101,9 +99,7 @@ class Peer:
 
     async def send_handshake(self):
         # begin handshake with format: <protocol str len> <protocol str> <8 bytes reserved> <info_hash> <my_id>
-        extension_bits = BitArray(uint=0, length=64)
-        extension_bits[-21] = 1
-        handshake = len(PROTOCOL_IDENTIFIER).to_bytes(1, "big") + PROTOCOL_IDENTIFIER.encode() + extension_bits.bytes + bytes.fromhex(self.download_manager.meta_info.infohash) + self.download_manager.client_id.encode()
+        handshake = len(PROTOCOL_IDENTIFIER).to_bytes(1, "big") + PROTOCOL_IDENTIFIER.encode() + bytes(8) + bytes.fromhex(self.download_manager.meta_info.infohash) + self.download_manager.client_id.encode()
         self.writer.write(handshake)
 
 
@@ -115,9 +111,9 @@ class Peer:
         peer_info_hash = await self.reader.read(20)
         recv_peer_id = (await self.reader.read(20)).decode()
         if protocol_str == "BitTorrent protocol":
-            if peer_info_hash == bytes.fromhex(self.download_manager.meta_info.infohash):
+            if True:  # peer_info_hash == bytes.fromhex(self.download_manager.meta_info.infohash):
                 if recv_peer_id == peer_id:
-                    logging.info(f"accepted the handshake")
+                    logging.debug(f"{self.download_manager.client_id} has accepted the handshake")
                     return
         self.writer.close()
         await self.writer.wait_closed()
@@ -182,20 +178,7 @@ class Peer:
             case 8: # "cancel"
                 pass
                 # TODO: handle close messages in uploader as separate task, should get request info from self.blocks_to_upload to cancel it
-            case 20:
-                if payload[0] == (0).to_bytes(1, 'big'):
-                    general_dict = bencodepy.decode(payload[1:])
-                    if not isinstance(self.download_manager, PMD.DownloadManager):
-                        self.download_manager.meta_info.piece_size = general_dict['metadata_size']
-                    extensions = general_dict['m'].items()
-                    for extension in extensions:
-                        self.extension_dict[extension[1]] = extension[0]
-                else:
-                    try:
-                        extension = getattr(self, self.extension_dict[payload[0]])
-                        await extension()
-                    except BaseException:
-                        logging.debug('received unfamiliar extension id')
+
 
     async def message_interpreter(self):
         msg = await self.reader.read(4)
@@ -212,8 +195,6 @@ class Peer:
 
         return (length - 1), message_id, payload
 
-    async def ut_metadata(self):
-        pass
 
     async def send_have_msg(self, piece_index):
         message = HAVE_MESSAGE_LENGTH + HAVE_MESSAGE_ID + piece_index.to_bytes(4, 'big')
@@ -223,13 +204,6 @@ class Peer:
 
     async def send_bitfield_msg(self):
         message = (BITFIELD_MESSAGE_BASE_LENGTH + len(self.download_manager.bitfield.tobytes())).to_bytes(4, 'big') + BITFIELD_MESSAGE_ID + self.download_manager.bitfield.tobytes()
-        self.writer.write(message)
-        await self.writer.drain()
-
-
-    async def send_extended_handshake_msg(self):
-        handshake_dict = bencodepy.encode(dict(m=dict(ut_metadata=3)))
-        message = (2 + len(handshake_dict)).to_bytes(4, 'big') + (20).to_bytes(1, 'big') + (0).to_bytes(1, 'big') + handshake_dict
         self.writer.write(message)
         await self.writer.drain()
 

@@ -29,11 +29,10 @@ class DownloadManager:
     peer_list: list[PMD.Peer]
     bitfield: BitArray
 
-    async def __init__(self, ip, client_id, content_path, torrent_path = None, block_len = 16000):
+    async def __init__(self, ip, client_id, content_path, torrent_path = None):
         self.client_id = client_id
 
-        if self.meta_info is None:
-            self.meta_info = Torrent.read(torrent_path)
+        self.meta_info = Torrent.read(torrent_path)
 
         self.file_list = list()
         hash_list_index = 0
@@ -42,19 +41,45 @@ class DownloadManager:
             self.file_list.append(PMD.FileManager(os.path.join(content_path, file.path), file.size, self, self.meta_info.hashes[hash_list_index:file_hash_list_len], hash_list_index))
             hash_list_index += file_hash_list_len
 
-        self.piece_list = [PMD.Piece(index, self.meta_info.piece_size, block_len) for index in range(self.meta_info.pieces)]
-        if self.meta_info.size % self.meta_info.piece_size != 0:
-            self.piece_list[self.meta_info.pieces - 1] = (PMD.Piece(self.meta_info.pieces - 1, self.meta_info.size % self.meta_info.piece_size, block_len))
+        self.piece_list = [PMD.Piece(index, self.meta_info.piece_size) for index in range(len(self.meta_info.hashes) - 1)]
+        self.piece_list.append(PMD.Piece(self.meta_info.pieces - 1, self.meta_info.files[0].size % self.meta_info.piece_size))
         self.bitfield = BitArray(uint=0, length=self.meta_info.pieces)
 
         self.bytes_downloaded = 0
         self.bytes_uploaded = 0
 
         self.priority_list = list()
-        for file in self.meta_info.files:
+        for file in self.file_list:
             for piece in file.piece_list:
                 self.priority_list.append(piece)
         self.priority_list.sort()
+
+        # try:
+        #     self.file = open(content_path, 'xb+')
+        # except FileExistsError:
+        #     self.file = open(content_path, 'rb+')
+        #     self.file.seek(0)
+        #     for piece in self.piece_list:
+        #         if piece.piece_index == (self.meta_info.pieces - 1):
+        #             piece_size = self.meta_info.files[0].size % self.meta_info.piece_size
+        #         else:
+        #             piece_size = self.meta_info.piece_size
+        #         file_piece = self.file.read(self.meta_info.piece_size)
+        #         curr_hash = sha1(file_piece).digest()
+        #         if curr_hash == self.meta_info.hashes[piece.piece_index]:
+        #             self.priority_list.remove(piece)
+        #             self.bitfield[piece.piece_index] = '0b1'
+        #             piece.blocks_to_request = None
+        #             piece.bytes_downloaded = piece_size
+        #             self.bytes_downloaded += piece_size
+        # if not self.file.seek(0, 2) == self.meta_info.files[0].size:
+        #     self.file.seek(self.meta_info.files[0].size - 1)
+        #     self.file.write(b"\0")
+        #     self.file.seek(0)
+        # if self.priority_list:
+        #     self.seeder_mode = False
+        # else:
+        #     self.seeder_mode = True
 
         self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip, self)
         await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.size - self.bytes_downloaded, "started")
@@ -85,6 +110,37 @@ class DownloadManager:
     async def write_to_file(self, block, data, piece_index):
         curr_file, internal_piece_index = (await self.determine_file(piece_index))
         await curr_file.write_to_file(block, data, internal_piece_index)
+        # curr_piece = self.piece_list[piece_index]
+        # await curr_piece.update_progress(len(data))
+        # self.bytes_downloaded += len(data)
+        # curr_piece.blocks_to_request.remove(block)
+        # self.file.seek((piece_index * self.meta_info.piece_size) + block.begin)
+        # self.file.write(data)
+        # logging.debug("wrote some data to file")
+        # await self.determine_piece_complete(curr_piece, (piece_index * self.meta_info.piece_size))
+
+
+    # async def determine_piece_complete(self, piece, file_pos):
+    #     if piece.piece_index == (self.meta_info.pieces - 1):
+    #         piece_size = self.meta_info.files[0].size % self.meta_info.piece_size
+    #     else:
+    #         piece_size = self.meta_info.piece_size
+    #     if piece.bytes_downloaded == piece_size:
+    #         self.file.seek(file_pos)
+    #         curr_hash = sha1(self.file.read(piece_size)).digest()
+    #         if curr_hash == self.meta_info.hashes[piece.piece_index]:
+    #             logging.debug(f"Piece number {piece.piece_index} has been downloaded and verified")
+    #             self.bitfield[piece.piece_index] = 1
+    #             self.priority_list.remove(piece)
+    #             if not self.priority_list:
+    #                 self.seeder_mode = True
+    #             await asyncio.gather(*[peer.send_have_msg(piece.piece_index) for peer in self.peer_list])
+    #         else:
+    #             piece.bytes_downloaded = 0
+    #             piece.blocks_to_download_counter = 0
+    #             piece.initiate_block_list(self.meta_info.piece_size)
+    #             self.bytes_downloaded -= piece_size
+    #             logging.debug(f"Piece number {piece.piece_index} did not pass verification")
 
 
     async def read_from_file(self, piece_index, block):
@@ -95,6 +151,28 @@ class DownloadManager:
 
     async def add_peer(self, reader, writer, peer_id):
         self.peer_list.append(await PMD.Peer(self, peer_id, reader=reader, writer=writer))
+
+
+    # def sort_priority_list(self):
+    #     self.priority_list.sort()
+    #
+    #
+    # def decrease_piece_priority(self, piece):
+    #     priority_list_index = self.priority_list.index(piece)
+    #     self.priority_list.pop(priority_list_index)
+    #     while piece.amount_in_swarm > self.priority_list[priority_list_index].amount_in_swarm and \
+    #             priority_list_index < len(self.priority_list): # doesn't compare to index +1 because og piece was popped
+    #         priority_list_index  += 1
+    #     self.priority_list.insert(priority_list_index, piece)
+    #
+    #
+    # def increase_piece_priority(self, piece):
+    #     priority_list_index = self.priority_list.index(piece)
+    #     self.priority_list.pop(priority_list_index)
+    #     while piece.amount_in_swarm < self.priority_list[priority_list_index - 1].amount_in_swarm and \
+    #             priority_list_index > 0:
+    #         priority_list_index  -= 1
+    #     self.priority_list.insert(priority_list_index, piece)
 
 
     async def choking_algorithm(self):

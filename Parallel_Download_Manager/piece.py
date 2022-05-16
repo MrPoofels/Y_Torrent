@@ -3,7 +3,7 @@ import Parallel_Download_Manager as PMD
 
 
 class Piece:
-    def __init__(self, piece_index, piece_len, block_len=16000):
+    def __init__(self, piece_index, piece_len):
         self.amount_in_swarm = 0
 
         self.piece_index = piece_index
@@ -11,12 +11,12 @@ class Piece:
         self.bytes_downloaded = 0
 
         self.blocks_to_request = list()
-        self.initiate_block_list(piece_len, block_len)
+        self.initiate_block_list(piece_len)
 
-    def initiate_block_list(self, piece_len, block_len=16000):
+    def initiate_block_list(self, piece_len):
         self.blocks_to_request = list()
-        full_blocks_amount, last_block_len = divmod(piece_len, block_len)
-        self.blocks_to_request.extend([PMD.Block(i * block_len, block_len) for i in range(full_blocks_amount)])
+        full_blocks_amount, last_block_len = divmod(piece_len, 16000)
+        self.blocks_to_request.extend([PMD.Block(i * 16000, 16000) for i in range(full_blocks_amount)])
         if not last_block_len == 0:
             self.blocks_to_request.append(PMD.Block(piece_len - last_block_len, last_block_len))
 

@@ -1,19 +1,17 @@
 import asyncio
 import torf
 from torf import Torrent
-from torf import Magnet
 import Torrents_Manager
 import socket
 import _sha1
 import logging
 import collections
 import bencodepy
-from bitstring import BitArray
 
 
 async def main():
-    # t = torf.Torrent.read("C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\archvalemeleeonly1.torrent")
-    # magnet = Magnet.from_string('magnet:?xt=urn:btih:A7B3BED8FA0F9BC4272321807033F56D1ED4EB61&dn=Avatar%20-%20The%20Last%20Airbender%20-%20The%20Promise%201-3%20(2012)%20(Son%20of%20Ult&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A6969%2Fannounce&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2F9.rarbg.me%3A2780%2Fannounce&tr=udp%3A%2F%2F9.rarbg.to%3A2730%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=http%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker.tiny-vps.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce')
+    # t = torf.Torrent.read("C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\real_test\\big-buck-bunny.torrent")
+    # print(t)
     print(socket.gethostname())
     logging.getLogger("asyncio").setLevel(logging.DEBUG)
     logging.basicConfig(level=logging.DEBUG)
