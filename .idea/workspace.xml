@@ -4,15 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 13&#10;magnet link handler should be working needs bugtesting&#10;15/5/2022">
-      <change afterPath="$PROJECT_DIR$/GUI/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/GUI/home_screen.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/GUI/ytorrent.kv" afterDir="false" />
+    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 14&#10;base layout done&#10;15/5/2022">
+      <change afterPath="$PROJECT_DIR$/GUI/scaling_text.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GUI/torrent_card.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/home_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/home_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/ytorrent.kv" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/ytorrent.kv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Torrents_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Torrents_Manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tracker_communication.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracker_communication.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +84,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="" />
+      <option name="PARAMETERS" value="-m inspector" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -113,6 +113,10 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python.test" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.test" />
@@ -184,7 +188,14 @@
       <option name="project" value="LOCAL" />
       <updated>1651491072992</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="commit 14&#10;base layout done&#10;15/5/2022">
+      <created>1652731805711</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1652731805711</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -224,7 +235,8 @@
     <MESSAGE value="commit 9&#10;seeder sends malformed packets but code runs smoothly nonetheless &#10;20/4/2022" />
     <MESSAGE value="commit 10&#10;file manager complete&#10;needs to be integrated fully into download_manager&#10;28/4/2022" />
     <MESSAGE value="commit 11&#10;working on tracker communication and magnet link parse&#10;2/5/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit 11&#10;working on tracker communication and magnet link parse&#10;2/5/2022" />
+    <MESSAGE value="commit 14&#10;base layout done&#10;15/5/2022" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit 14&#10;base layout done&#10;15/5/2022" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -287,14 +299,33 @@
           <line>317</line>
           <option name="timeStamp" value="88" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/GUI/scaling_text.py</url>
+          <line>23</line>
+          <option name="timeStamp" value="100" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/GUI/scaling_text.py</url>
+          <line>20</line>
+          <option name="timeStamp" value="103" />
+        </line-breakpoint>
       </breakpoints>
+      <default-breakpoints>
+        <breakpoint type="python-exception">
+          <properties notifyOnTerminate="true" exception="BaseException">
+            <option name="notifyOnTerminate" value="true" />
+          </properties>
+        </breakpoint>
+      </default-breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="self.client_id" language="Python" />
-        <watch expression="self.peer_list" language="Python" />
-        <watch expression="self.downloaders" language="Python" />
-        <watch expression="self.download_manager.client_id" language="Python" />
+        <watch expression="self.texture_size" language="Python" />
+        <watch expression="self.font_size" language="Python" />
+        <watch expression="self.text_size" language="Python" />
+        <watch expression="self.text" language="Python" />
+        <watch expression="self.size" language="Python" />
+        <watch expression="self.text_height_multiplier" language="Python" />
       </configuration>
     </watches-manager>
   </component>

@@ -13,23 +13,11 @@ from kivy.uix.widget import Widget
 from kivy.lang.builder import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.stacklayout import StackLayout
-from kivy.graphics import Color, Rectangle
-
-
-class HomeScreen(BoxLayout):
-    def __init__(self, **kwargs):
-        super(HomeScreen, self).__init__(**kwargs)
-        self.layout_content.bind(minimum_height=self.layout_content.setter('height'))
-    # with StackLayout.canvas.before:
-    #     Color(0, 1, 0, 1)  # green; colors range from 0-1 instead of 0-255
-    #     self.rect = Rectangle(size=StackLayout.size, pos=StackLayout.pos)
-    #
-    # def update_rect(self, instance, value):
-    #     instance.rect.pos = instance.pos
-    #     instance.rect.size = instance.size
-    #
-    # # listen to size and position changes
-    # StackLayout.bind(pos=update_rect, size=update_rect)
+from kivy.graphics import Color, Rectangle, PushMatrix, PopMatrix, Scale
+from kivy.uix.image import Image
+from GUI import HomeScreen
+from GUI import TorrentCard
+from kivy.uix.label import Label
 
 
 class YTorrentApp(App):
@@ -38,11 +26,12 @@ class YTorrentApp(App):
     def build(self):
         return HomeScreen()
 
-    def app_func(self):
+    def app_func(self, *starting_tasks):
         """This will run methods asynchronously and then block until they
         are finished
         """
-        self.tasks.append(asyncio.create_task(self.waste_time_freely()))
+        for task in starting_tasks:
+            self.tasks.append(task)
 
         async def run_wrapper():
             await self.async_run(async_lib='asyncio')
@@ -56,4 +45,5 @@ class YTorrentApp(App):
 if __name__ == '__main__':
     Builder.load_file('C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\GUI\\ytorrent.kv')
     YTorrentApp().run()
-    # asyncio.run(YTorrentApp().app_func(), debug=2)
+    # loop = asyncio.get_event_loop()
+    # loop.run_until_complete(YTorrentApp().app_func())

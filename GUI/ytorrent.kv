@@ -1,5 +1,7 @@
+<ScalingText>:
+
 # Define background color Template
-<BackgroundColor@Widget>
+<BackgroundColor@Widget>:
     background_color: 1, 1, 1, 1
     canvas.before:
         Color:
@@ -8,7 +10,7 @@
             size: self.size
             pos: self.pos
 
-<BackgroundLabel@Label+BackgroundColor>
+<BackgroundLabel@Label+BackgroundColor>:
     background_color: 0, 0, 0, 0
     # Default the background color for this label
     # to r 0, g 0, b 0, a 0
@@ -21,95 +23,177 @@
 
 	text: '%s' % ctx.text
 
-[ScrollButton@Button]:
+<ScrollButton@Button>:
 	background_normal: ''
 	background_color: 1, 1, 1, 1
 	color: 0, 0, 0, 1
 
-	text: '%s' % ctx.text
+<CardButton@Button>:
+	canvas.before:
+		Color:
+			rgba: .5, .5, .5, 1
+		Line:
+			width: 1
+			rectangle: self.x, self.y, self.width, self.height
+	size_hint: None, 0.3
+	width: self.height
+	color: 0, 0, 0, 1
 
-<HomeScreen>:
+<CardLabel@ScalingText>:
+	text_size: self.size
+	halign: 'left'
+	valign: 'middle'
+	color: 0, 0, 0, 1
 
-	layout_content: layout_content
 
-    BoxLayout:
-        orientation: 'vertical'
-
-        BackgroundLabel:
-            text: 'YTorrent'
-            background_color: 66/255, 160/255, 82/255, 1
-            size_hint: 1, 0.1
-
-		StackLayout:
-			size_hint: 1, 0.1
-
-			canvas:
+<TorrentCard>:
+	rows: 1
+	canvas:
+    	Color:
+            rgb: 1, 1, 1, 1
+        Rectangle:
+        	pos: self.pos
+            size: self.width, self.height
+	padding: 3
+	BoxLayout:
+		orientation: 'horizontal'
+		spacing: 10
+		GridLayout:
+			size_hint: None, 1
+			width: 0.3*self.height
+			cols: 1
+			spacing: 5
+			CardButton:
+				text: '1'
+			CardButton:
+				text: '2'
+			CardButton:
+				text: '3'
+		BoxLayout:
+			canvas.before:
 				Color:
 					rgb: 170/255, 170/255, 170/255
 				Rectangle:
 					size: self.size
 					pos: self.pos
+			size_hint: 1, 1
+			orientation: 'vertical'
+			CardLabel:
+				size_hint: 1, 0.25
+				text: root.name
+				font_size: "30dp"
+				text_height_multiplier: 0.7
+			StackLayout:
+				size_hint: 1, 0.25
+				CardLabel:
+					size_hint: 0.25, 1
+					text: root.eta
+					font_size: "25dp"
+					text_height_multiplier: 0.5
+			CardLabel:
+				size_hint: 1, 0.25
+			CardLabel:
+				size_hint: 1, 0.25
 
-			ToolbarButton:
-                text: 'button 1'
 
-            ToolbarButton:
-                text: 'button 2'
 
-            ToolbarButton:
-                text: 'button 3'
 
-            ToolbarButton:
-                text: 'button 4'
-        BoxLayout:
-        	orientation: 'horizontal'
-        	spacing: 40
 
-        	BackgroundLabel:
-        		background_color: 1, 1, 1, 1
-        		text: 'test'
-        		size_hint: 0.3, 1
 
-        	ScrollView:
-        		do_scroll_x: False
-    			do_scroll_y: True
-    			size: self.size
-            	bar_color: [122, 122, 122, 1]
-            	bar_width: 12
-            	bar_margin: -40
+<HomeScreen>:
 
-    			GridLayout:
-    				id: layout_content
-    				padding: 10, 10
-    				spacing: 10
-    				cols: 1
-    				size_hint_y: None
-    				row_default_height: '175dp'
-                	row_force_default: True
+	cards_list_content: cards_list_content
 
-    				ScrollButton:
-                		text: 'button 1'
+	orientation: 'vertical'
 
-					ScrollButton:
-						text: 'button 2'
+	# Title
+	BackgroundLabel:
+		text: ' YTorrent'
+		bold: True
+		font_size: '25sp'
+		background_color: 66/255, 160/255, 82/255, 1
+		size_hint: 1, 0.05
+		text_size: self.size
+		halign: 'left'
+		valign: 'middle'
 
-					ScrollButton:
-						text: 'button 3'
+	# Toolbar
+	StackLayout:
+		size_hint: 1, 0.05
 
-					ScrollButton:
-						text: 'button 4'
+		canvas:
+			Color:
+				rgb: 170/255, 170/255, 170/255
+			Rectangle:
+				size: self.size
+				pos: self.pos
 
-					ScrollButton:
-                		text: 'button 5'
+		ToolbarButton:
+			text: 'button 1'
 
-					ScrollButton:
-						text: 'button 6'
+		ToolbarButton:
+			text: 'button 2'
 
-					ScrollButton:
-						text: 'button 7'
+		ToolbarButton:
+			text: 'button 3'
 
-					ScrollButton:
-						text: 'button 8'
+		ToolbarButton:
+			text: 'button 4'
 
-        	Label:
-        		size_hint: 0, 1
+	# Main interface
+	BoxLayout:
+		orientation: 'horizontal'
+		spacing: 40
+		padding: 10
+
+		# Sorting side menu
+		BackgroundLabel:
+			background_color: 1, 1, 1, 1
+			text: 'test'
+			size_hint: 0.3, 1
+
+		# Torrent cards scrolling list
+		ScrollView:
+			do_scroll_x: False
+			do_scroll_y: True
+			size: self.size
+			bar_color: [122, 122, 122, 1]
+			bar_width: 12
+			bar_margin: -40
+
+			GridLayout:
+				id: cards_list_content
+				spacing: 10
+				cols: 1
+				size_hint_y: None
+				row_default_height: '175dp'
+				row_force_default: True
+
+				TorrentCard:
+
+				ScrollButton:
+					text: 'button 1'
+
+				ScrollButton:
+					text: 'button 2'
+
+				ScrollButton:
+					text: 'button 3'
+
+				ScrollButton:
+					text: 'button 4'
+
+				ScrollButton:
+					text: 'button 5'
+
+				ScrollButton:
+					text: 'button 6'
+
+				ScrollButton:
+					text: 'button 7'
+
+				ScrollButton:
+					text: 'button 8'
+
+		Label:
+			size_hint: 0, 1
