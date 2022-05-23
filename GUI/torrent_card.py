@@ -8,8 +8,8 @@ from GUI import ScalingText
 
 
 class TorrentCard(StackLayout):
-    name = StringProperty('Spirited Away (1080p)')
-    eta = StringProperty('ETA: 2D 7H 30M')
+    name = StringProperty('[anchor=Start]Spirited Away (1080p)[anchor=End]')
+    eta = StringProperty('[anchor=Start]ETA: 2D 7H 30M[anchor=End]')
     progress_bar = ObjectProperty()
     download_speed = NumericProperty(0)
     upload_speed = NumericProperty(0)

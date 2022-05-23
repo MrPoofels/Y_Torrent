@@ -1,3 +1,5 @@
+#:import Window kivy.core.window.Window
+
 <ScalingText>:
 
 # Define background color Template
@@ -40,6 +42,7 @@
 	color: 0, 0, 0, 1
 
 <CardLabel@ScalingText>:
+	markup: True
 	text_size: self.size
 	halign: 'left'
 	valign: 'middle'
@@ -47,6 +50,12 @@
 
 
 <TorrentCard>:
+	canvas.after:
+		Color:
+			rgba: 0.2, 0.2, 0.2, 1
+		Line:
+			width: 1.2
+			rectangle: self.x, self.y, self.width, self.height
 	rows: 1
 	canvas:
     	Color:
@@ -54,7 +63,7 @@
         Rectangle:
         	pos: self.pos
             size: self.width, self.height
-	padding: 3
+	padding: 5
 	BoxLayout:
 		orientation: 'horizontal'
 		spacing: 10
@@ -70,26 +79,18 @@
 			CardButton:
 				text: '3'
 		BoxLayout:
-			canvas.before:
-				Color:
-					rgb: 170/255, 170/255, 170/255
-				Rectangle:
-					size: self.size
-					pos: self.pos
 			size_hint: 1, 1
 			orientation: 'vertical'
 			CardLabel:
 				size_hint: 1, 0.25
 				text: root.name
-				font_size: "30dp"
 				text_height_multiplier: 0.7
 			StackLayout:
 				size_hint: 1, 0.25
 				CardLabel:
 					size_hint: 0.25, 1
 					text: root.eta
-					font_size: "25dp"
-					text_height_multiplier: 0.5
+					text_height_multiplier: 0.6
 			CardLabel:
 				size_hint: 1, 0.25
 			CardLabel:
@@ -105,6 +106,12 @@
 	cards_list_content: cards_list_content
 
 	orientation: 'vertical'
+	canvas:
+		Color:
+			rgb: 1, 1, 1, 1
+		Rectangle:
+			size: self.size
+			pos: self.pos
 
 	# Title
 	BackgroundLabel:
@@ -148,6 +155,12 @@
 
 		# Sorting side menu
 		BackgroundLabel:
+			canvas.after:
+				Color:
+					rgba: .2, .2, .2, 1
+				Line:
+					width: 1
+					rectangle: self.x, self.y, self.width, self.height
 			background_color: 1, 1, 1, 1
 			text: 'test'
 			size_hint: 0.3, 1
@@ -157,7 +170,7 @@
 			do_scroll_x: False
 			do_scroll_y: True
 			size: self.size
-			bar_color: [122, 122, 122, 1]
+			bar_color: [0.5, 0.5, 0.5, 1]
 			bar_width: 12
 			bar_margin: -40
 
@@ -171,29 +184,18 @@
 
 				TorrentCard:
 
-				ScrollButton:
-					text: 'button 1'
+				TorrentCard:
 
-				ScrollButton:
-					text: 'button 2'
+				TorrentCard:
 
-				ScrollButton:
-					text: 'button 3'
+				TorrentCard:
 
-				ScrollButton:
-					text: 'button 4'
+				TorrentCard:
 
-				ScrollButton:
-					text: 'button 5'
+				TorrentCard:
 
-				ScrollButton:
-					text: 'button 6'
+				TorrentCard:
 
-				ScrollButton:
-					text: 'button 7'
-
-				ScrollButton:
-					text: 'button 8'
-
+				TorrentCard:
 		Label:
 			size_hint: 0, 1

@@ -20,6 +20,13 @@ from GUI import TorrentCard
 from kivy.uix.label import Label
 
 
+async def temp_start():
+    await Torrents_Manager.create_new_torrent('Poofels',
+                                              'C:\\Users\\Yahav\\Desktop\\Morbius.2022.1080p.WEB-DL.x264.AAC-EVO [IPT].torrent',
+                                              'C:\\Users\\Yahav\\Desktop')
+    await Torrents_Manager.__start()
+
+
 class YTorrentApp(App):
     tasks: list[asyncio.Task] = list()
 
@@ -43,7 +50,8 @@ class YTorrentApp(App):
 
 
 if __name__ == '__main__':
-    Builder.load_file('C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\GUI\\ytorrent.kv')
-    YTorrentApp().run()
+    asyncio.run(temp_start())
+    # Builder.load_file('C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\GUI\\ytorrent.kv')
+    # YTorrentApp().run()
     # loop = asyncio.get_event_loop()
     # loop.run_until_complete(YTorrentApp().app_func())

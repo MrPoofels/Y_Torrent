@@ -4,14 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 14&#10;base layout done&#10;15/5/2022">
-      <change afterPath="$PROJECT_DIR$/GUI/scaling_text.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/GUI/torrent_card.py" afterDir="false" />
+    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 15&#10;broken commit pc needs restart&#10;15/5/2022">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GUI/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GUI/home_screen.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/home_screen.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/scaling_text.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/scaling_text.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/torrent_card.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/torrent_card.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GUI/ytorrent.kv" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/ytorrent.kv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Torrents_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Torrents_Manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -77,6 +74,7 @@
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="KCFG_GRAPHICS_WINDOW_STATE" value="maximized" />
       </envs>
       <option name="SDK_HOME" value="C:\Users\Yahav\AppData\Local\Programs\Python\Python310\python.exe" />
       <option name="WORKING_DIRECTORY" value="" />
@@ -84,7 +82,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="-m inspector" />
+      <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -195,7 +193,14 @@
       <option name="project" value="LOCAL" />
       <updated>1652731805711</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="commit 15&#10;broken commit pc needs restart&#10;15/5/2022">
+      <created>1653234135772</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1653234135772</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -236,7 +241,8 @@
     <MESSAGE value="commit 10&#10;file manager complete&#10;needs to be integrated fully into download_manager&#10;28/4/2022" />
     <MESSAGE value="commit 11&#10;working on tracker communication and magnet link parse&#10;2/5/2022" />
     <MESSAGE value="commit 14&#10;base layout done&#10;15/5/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit 14&#10;base layout done&#10;15/5/2022" />
+    <MESSAGE value="commit 15&#10;broken commit pc needs restart&#10;15/5/2022" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit 15&#10;broken commit pc needs restart&#10;15/5/2022" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -301,13 +307,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/GUI/scaling_text.py</url>
-          <line>23</line>
-          <option name="timeStamp" value="100" />
+          <line>17</line>
+          <option name="timeStamp" value="107" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/GUI/scaling_text.py</url>
-          <line>20</line>
-          <option name="timeStamp" value="103" />
+          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
+          <line>34</line>
+          <option name="timeStamp" value="110" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

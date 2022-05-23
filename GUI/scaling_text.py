@@ -10,20 +10,18 @@ class ScalingText(Label):
 
     def __init__(self, **kwargs):
         super(ScalingText, self).__init__(**kwargs)
-        Clock.schedule_once(partial(self.on_width, self))
+        self.shorten = False
 
-    def on_width(self, widget, width):
+    def on_texture_size(self, widget, width):
         self.texture_update()
-        if self.texture_size[0] == 100 or self.size[0] == 0: #or self.size[1] != [42.0]:
-            return
-        # for long names, reduce font size until it fits in its self
-        m = self.text_height_multiplier
+        # increase font size until it either reaches desired percentage of text height or can't fit in the boundaries
+        m = 0.3
         self.font_size = self.height * m
-        print(f"font size: {self.font_size}, texture size: {self.texture_size},size: {self.size}, m: {m}")
+        print(f"font size: {self.font_size}, texture size: {self.texture_size},size: {self.size}, m: {m}\n")
         self.texture_update()
-        while m > 0.3 and self.texture_size[0] > self.width:
-            m = m - 0.05
+        while (m < self.text_height_multiplier and self.texture_size[0] < self.width): # or self.anchors["Start"][1] != self.anchors["End"][1]:
+            m = m + 0.05
             self.font_size = self.height * m
             self.texture_update()
-        print(f"new font size: {self.font_size}, texture size: {self.texture_size}, size: {self.size}, m: {m}")
-        # self.text_size = self.size
+
+        print(f"new font size: {self.font_size}, texture size: {self.texture_size}, size: {self.size}, m: {m}\n")
