@@ -14,8 +14,8 @@ class TrackerCommunication:
         Args:
             announce (torf._utils.URL):
         """
-        print(announce[:-5])
-        self.reader, self.writer = await asyncio.open_connection(announce, 80)
+        print(announce)
+        self.reader, self.writer = await asyncio.open_connection(host=announce, port=443, ssl=True)
         self.announce = announce
         self.info_hash = info_hash
         self.peer_id = peer_id

@@ -14,9 +14,8 @@ logging.getLogger("asyncio").setLevel(logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
 
 
-@PMD.Async_init
 class FileManager:
-    async def __init__(self, file_path, file_size, download_manager, hash_list, global_piece_index_start):
+    def __init__(self, file_path, file_size, download_manager, hash_list, global_piece_index_start):
         self.download_manager = download_manager
         self.file_size = file_size
         self.hash_list = hash_list
@@ -27,7 +26,7 @@ class FileManager:
 
         try:
             self.file = open(file_path, 'xb+')
-        except FileExistsError:
+        except FileExistsError or FileNotFoundError:
             self.file = open(file_path, 'rb+')
             self.file.seek(0)
             curr_internal_piece_index = 0
@@ -39,20 +38,15 @@ class FileManager:
                 file_piece = self.file.read(self.download_manager.meta_info.piece_size)
                 curr_hash = sha1(file_piece).digest()
                 if curr_hash == self.hash_list[curr_internal_piece_index]:
-                    self.priority_list.remove(piece)
                     self.bitfield[curr_internal_piece_index] = '0b1'
                     piece.blocks_to_request = None
                     piece.bytes_downloaded = piece_size
-                    self.bytes_downloaded += piece_size
+                    self.download_manager.bytes_downloaded += piece_size
                 curr_internal_piece_index += 1
         if not self.file.seek(0, 2) == self.file_size:
             self.file.seek(self.file_size - 1)
             self.file.write(b"\0")
             self.file.seek(0)
-        if self.priority_list:
-            self.seeder_mode = False
-        else:
-            self.seeder_mode = True
 
 
     async def write_to_file(self, block, data, internal_piece_index):

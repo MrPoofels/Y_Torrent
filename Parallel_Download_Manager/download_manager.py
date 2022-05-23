@@ -34,13 +34,6 @@ class DownloadManager:
 
         self.meta_info = Torrent.read(torrent_path)
 
-        self.file_list = list()
-        hash_list_index = 0
-        for file in self.meta_info.files:
-            file_hash_list_len = math.ceil(file.size / self.meta_info.piece_size)
-            self.file_list.append(PMD.FileManager(os.path.join(content_path, file.path), file.size, self, self.meta_info.hashes[hash_list_index:file_hash_list_len], hash_list_index))
-            hash_list_index += file_hash_list_len
-
         self.piece_list = [PMD.Piece(index, self.meta_info.piece_size) for index in range(self.meta_info.pieces)]
         if self.meta_info.size % self.meta_info.piece_size != 0:
             self.piece_list[self.meta_info.pieces - 1] = (PMD.Piece(self.meta_info.pieces - 1, self.meta_info.size % self.meta_info.piece_size))
@@ -49,11 +42,28 @@ class DownloadManager:
         self.bytes_downloaded = 0
         self.bytes_uploaded = 0
 
+        self.file_list = list()
+        hash_list_index = 0
+        for file in self.meta_info.files:
+            file_hash_list_len = math.ceil(file.size / self.meta_info.piece_size)
+            print(f"file: {file} | size: {file.size}")
+            absolute_path = os.path.join(content_path, file)
+            os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
+            self.file_list.append(PMD.FileManager(absolute_path, file.size, self, self.meta_info.hashes[hash_list_index:(hash_list_index + file_hash_list_len)], hash_list_index))
+            hash_list_index += file_hash_list_len
+
         self.priority_list = list()
         for file in self.file_list:
-            for piece in file.piece_list:
-                self.priority_list.append(piece)
+            index = 0
+            for flag in file.bitfield:
+                if flag == '0b1':
+                    self.priority_list.append(file.piece_list[index])
+                index += 1
         self.priority_list.sort()
+        if self.priority_list:
+            self.seeder_mode = False
+        else:
+            self.seeder_mode = True
 
         self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip, self)
         await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.size - self.bytes_downloaded, "started")

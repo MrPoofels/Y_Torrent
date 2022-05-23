@@ -4,12 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 15&#10;broken commit pc needs restart&#10;15/5/2022">
+    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 16&#10;torf not working&#10;23/5/2022">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GUI/scaling_text.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/scaling_text.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GUI/torrent_card.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/torrent_card.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GUI/ytorrent.kv" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/ytorrent.kv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/file_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/file_manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tracker_communication.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracker_communication.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,9 +49,8 @@
     </file-type-list>
   </component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$USER_HOME$/AppData/Local/Programs/Python/Python310/Lib/site-packages/torf/_torrent.py" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$USER_HOME$/AppData/Local/Programs/Python/Python310/share/kivy-examples/frameworks/twisted/twistd_app.py" root0="SKIP_INSPECTION" />
     <setting file="file://$USER_HOME$/AppData/Local/Programs/Python/Python310/share/kivy-examples/async/asyncio_advanced.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$USER_HOME$/AppData/Local/Programs/Python/Python310/share/kivy-examples/frameworks/twisted/twistd_app.py" root0="SKIP_INSPECTION" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -74,7 +73,6 @@
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
-        <env name="KCFG_GRAPHICS_WINDOW_STATE" value="maximized" />
       </envs>
       <option name="SDK_HOME" value="C:\Users\Yahav\AppData\Local\Programs\Python\Python310\python.exe" />
       <option name="WORKING_DIRECTORY" value="" />
@@ -200,7 +198,14 @@
       <option name="project" value="LOCAL" />
       <updated>1653234135772</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="commit 16&#10;torf not working&#10;23/5/2022">
+      <created>1653297256500</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1653297256500</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -242,7 +247,8 @@
     <MESSAGE value="commit 11&#10;working on tracker communication and magnet link parse&#10;2/5/2022" />
     <MESSAGE value="commit 14&#10;base layout done&#10;15/5/2022" />
     <MESSAGE value="commit 15&#10;broken commit pc needs restart&#10;15/5/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit 15&#10;broken commit pc needs restart&#10;15/5/2022" />
+    <MESSAGE value="commit 16&#10;torf not working&#10;23/5/2022" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit 16&#10;torf not working&#10;23/5/2022" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -286,17 +292,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>133</line>
+          <line>143</line>
           <option name="timeStamp" value="78" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>132</line>
+          <line>142</line>
           <option name="timeStamp" value="79" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>137</line>
+          <line>147</line>
           <option name="timeStamp" value="81" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -311,9 +317,14 @@
           <option name="timeStamp" value="107" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tracker_communication.py</url>
+          <line>16</line>
+          <option name="timeStamp" value="113" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>34</line>
-          <option name="timeStamp" value="110" />
+          <line>48</line>
+          <option name="timeStamp" value="120" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -332,6 +343,9 @@
         <watch expression="self.text" language="Python" />
         <watch expression="self.size" language="Python" />
         <watch expression="self.text_height_multiplier" language="Python" />
+        <watch expression="self.meta_info.metainfo['info']['pieces']" />
+        <watch expression="len(self.meta_info.metainfo['info']['pieces'])/20" language="Python" />
+        <watch expression="file" language="Python" />
       </configuration>
     </watches-manager>
   </component>

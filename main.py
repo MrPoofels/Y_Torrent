@@ -22,35 +22,35 @@ from kivy.uix.label import Label
 
 async def temp_start():
     await Torrents_Manager.create_new_torrent('Poofels',
-                                              'C:\\Users\\Yahav\\Desktop\\Morbius.2022.1080p.WEB-DL.x264.AAC-EVO [IPT].torrent',
+                                              'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\Morbius [2022] YG.torrent',
                                               'C:\\Users\\Yahav\\Desktop')
     await Torrents_Manager.__start()
 
 
-class YTorrentApp(App):
-    tasks: list[asyncio.Task] = list()
-
-    def build(self):
-        return HomeScreen()
-
-    def app_func(self, *starting_tasks):
-        """This will run methods asynchronously and then block until they
-        are finished
-        """
-        for task in starting_tasks:
-            self.tasks.append(task)
-
-        async def run_wrapper():
-            await self.async_run(async_lib='asyncio')
-            print('App done')
-            for task in self.tasks:
-                task.cancel()
-
-        return asyncio.gather(run_wrapper(), *self.tasks)
+# class YTorrentApp(App):
+#     tasks: list[asyncio.Task] = list()
+#
+#     def build(self):
+#         return HomeScreen()
+#
+#     def app_func(self, *starting_tasks):
+#         """This will run methods asynchronously and then block until they
+#         are finished
+#         """
+#         for task in starting_tasks:
+#             self.tasks.append(task)
+#
+#         async def run_wrapper():
+#             await self.async_run(async_lib='asyncio')
+#             print('App done')
+#             for task in self.tasks:
+#                 task.cancel()
+#
+#         return asyncio.gather(run_wrapper(), *self.tasks)
 
 
 if __name__ == '__main__':
-    asyncio.run(temp_start())
+    asyncio.run(temp_start(), debug=2)
     # Builder.load_file('C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\GUI\\ytorrent.kv')
     # YTorrentApp().run()
     # loop = asyncio.get_event_loop()
