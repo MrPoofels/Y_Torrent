@@ -15,9 +15,8 @@ import concurrent.futures
 import math
 
 
-PEER_ID_INDEX = 0
-PEER_IP_INDEX = 1
-PEER_PORT_INDEX = 2
+PEER_IP_INDEX = 0
+PEER_PORT_INDEX = 1
 
 
 logging.getLogger("asyncio").setLevel(logging.DEBUG)
@@ -29,82 +28,142 @@ class DownloadManager:
     peer_list: list[PMD.Peer]
     bitfield: BitArray
 
-    async def __init__(self, ip, client_id, content_path, torrent_path = None):
+    async def __init__(self, client_id, content_path, torrent_path = None):
+        self.domination = 0
         self.client_id = client_id
-
+    
         self.meta_info = Torrent.read(torrent_path)
-
+    
         self.piece_list = [PMD.Piece(index, self.meta_info.piece_size) for index in range(self.meta_info.pieces)]
         if self.meta_info.size % self.meta_info.piece_size != 0:
             self.piece_list[self.meta_info.pieces - 1] = (PMD.Piece(self.meta_info.pieces - 1, self.meta_info.size % self.meta_info.piece_size))
         self.bitfield = BitArray(uint=0, length=self.meta_info.pieces)
-
+    
         self.bytes_downloaded = 0
         self.bytes_uploaded = 0
-
+    
         self.file_list = list()
-        hash_list_index = 0
+        start_byte_index = 0
         for file in self.meta_info.files:
-            file_hash_list_len = math.ceil(file.size / self.meta_info.piece_size)
-            print(f"file: {file} | size: {file.size}")
             absolute_path = os.path.join(content_path, file)
             os.makedirs(os.path.dirname(absolute_path), exist_ok=True)
-            self.file_list.append(PMD.FileManager(absolute_path, file.size, self, self.meta_info.hashes[hash_list_index:(hash_list_index + file_hash_list_len)], hash_list_index))
-            hash_list_index += file_hash_list_len
-
+            self.file_list.append(PMD.FileManager(absolute_path, file.size, self, start_byte_index))
+            start_byte_index += file.size
+    
         self.priority_list = list()
-        for file in self.file_list:
-            index = 0
-            for flag in file.bitfield:
-                if flag == '0b1':
-                    self.priority_list.append(file.piece_list[index])
-                index += 1
+        for piece in self.piece_list:
+            if self.bitfield[piece.piece_index] != '0b1':
+                self.priority_list.append(piece)
         self.priority_list.sort()
+        
+        for piece in self.piece_list:
+            await self.verify_piece(piece, self.get_piece_size(piece.piece_index))
+    
         if self.priority_list:
             self.seeder_mode = False
         else:
             self.seeder_mode = True
-
-        self.tracker_communication = await tracker_communication.TrackerCommunication(self.meta_info.trackers[0][0], self.meta_info.infohash, self.client_id, ip, self)
-        await self.tracker_communication.http_GET(self.bytes_uploaded, self.bytes_downloaded, self.meta_info.size - self.bytes_downloaded, "started")
-        peer_info_list, interval = await self.tracker_communication.interpret_tracker_response()
-        self.tracker_communication.periodic_GET_task = asyncio.create_task(self.tracker_communication.periodic_GET(interval))
-
-        self.peer_list = list()
-        await self.extend_peer_list(peer_info_list)
+        self.tracker_communication = tracker_communication.TrackerCommunication(self.meta_info.trackers)
+        await self.tracker_communication.connect()
+        peer_info_list = self.tracker_communication.announce(self, 2)
+    
+        self.peer_list = [PMD.Peer(self, peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]
+        try:
+            await asyncio.gather(*[peer.initiate_peer() for peer in self.peer_list])
+        except asyncio.CancelledError:
+            logging.warning(f'peer was cancelled')
         self.peer_list.sort(reverse=True)
-
+    
         self.downloaders = []
         self.optimistic_unchoke_timer_task = asyncio.create_task(self.optimistic_unchoke_timer())
         self.choking_algorithm_task = asyncio.create_task(self.choking_algorithm())
+    
+    async def add_peer(self, reader, writer, peer_id):
+        peer = PMD.Peer(self, peer_id, reader=reader, writer=writer)
+        self.peer_list.append(peer)
+        await peer.initiate_peer()
+        
+        
+        
+    async def write_data(self, piece_index, data, length, begin):
+        """
 
+        Args:
+            piece_index:
+            data (bytearray):
+            length:
+            begin:
+        """
+        file_index, file_respective_begin = self.get_file_pos(piece_index, begin)
+        while len(data) > 0:
+            data = await self.file_list[file_index].write_to_file(file_respective_begin, data)
+            file_index += 1
+            file_respective_begin = 0
+        self.piece_list[piece_index].block_done(PMD.Block(begin, length))
+        self.bytes_downloaded += length
+        await self.determine_piece_complete(self.piece_list[piece_index])
+        
 
-    async def extend_peer_list(self, peer_info_list):
-        self.peer_list.extend(await asyncio.gather(*[PMD.Peer(self, peer_info[PEER_ID_INDEX], peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]))
-
-
-    async def determine_file(self, global_piece_index):
-        for file in self.file_list:
-            if global_piece_index >= file.global_piece_index_start:
-                curr_file = file
-                internal_piece_index = (global_piece_index - file.global_piece_index_start)
-        return curr_file, internal_piece_index
-
-
-    async def write_to_file(self, block, data, piece_index):
-        curr_file, internal_piece_index = (await self.determine_file(piece_index))
-        await curr_file.write_to_file(block, data, internal_piece_index)
-
-
-    async def read_from_file(self, piece_index, block):
-        curr_file, internal_piece_index = (await self.determine_file(piece_index))
-        data = curr_file.read_from_file(internal_piece_index, block)
+    async def read_data(self, piece_index, length, begin):
+        file_index, file_respective_begin = self.get_file_pos(piece_index, begin)
+        data = bytearray()
+        while len(data) < length:
+            data.extend(await self.file_list[file_index].read_from_file(file_respective_begin, length - len(data)))
+            file_index += 1
+            file_respective_begin = 0
         return data
 
 
-    async def add_peer(self, reader, writer, peer_id):
-        self.peer_list.append(await PMD.Peer(self, peer_id, reader=reader, writer=writer))
+    def get_piece_size(self, piece_index):
+        if piece_index == (len(self.piece_list) - 1):
+            return self.meta_info.size % self.meta_info.piece_size
+        else:
+            return self.meta_info.piece_size
 
+
+    def get_file_pos(self, piece_index, begin):
+        """
+
+        Args:
+            begin:
+            piece_index:
+        """
+        global_block_begin = (piece_index * self.meta_info.piece_size) + begin
+        for file in self.file_list:
+            if global_block_begin >= file.start_byte:
+                curr_file = file
+                file_respective_begin = (global_block_begin - file.start_byte)
+            else:
+                break
+        file_index = self.file_list.index(curr_file)
+        return file_index, file_respective_begin
+    
+    
+    async def determine_piece_complete(self, piece):
+        piece_size = self.get_piece_size(piece.piece_index)
+        if piece.bytes_downloaded == piece_size:
+            if await self.verify_piece(piece, piece_size):
+                await asyncio.gather(*[peer.send_have_msg(piece.piece_index) for peer in self.peer_list])
+            
+            
+    async def verify_piece(self, piece, piece_size):
+        curr_hash = sha1(await self.read_data(piece.piece_index, piece_size, 0)).digest()
+        if curr_hash == self.meta_info.hashes[piece.piece_index]:
+            logging.info(
+                f"Piece number {piece.piece_index} has been downloaded and verified")
+            self.bitfield.set(True, piece.piece_index)
+            self.priority_list.remove(piece)
+            if not self.priority_list:
+                self.seeder_mode = True
+            return True
+        else:
+            if piece.bytes_downloaded > 0:
+                self.bytes_downloaded -= piece_size
+            piece.bytes_downloaded = 0
+            piece.initiate_block_list(piece_size)
+            logging.warning(
+                f"Piece number {piece.piece_index} did not pass verification")
+            return False
 
     def sort_priority_list(self):
         self.priority_list.sort()
@@ -139,7 +198,6 @@ class DownloadManager:
             self.downloaders.append(self.peer_list[0])
 
             for peer in self.peer_list:
-
                 if peer >= self.downloaders[0]:
                     await peer.change_am_choking_state(False)
                     if peer._peer_interested:

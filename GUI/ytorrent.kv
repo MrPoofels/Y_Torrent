@@ -64,9 +64,11 @@
         	pos: self.pos
             size: self.width, self.height
 	padding: 5
+#	root layout
 	BoxLayout:
 		orientation: 'horizontal'
 		spacing: 10
+#		state control buttons
 		GridLayout:
 			size_hint: None, 1
 			width: 0.3*self.height
@@ -78,13 +80,16 @@
 				text: '2'
 			CardButton:
 				text: '3'
+#		info rows
 		BoxLayout:
 			size_hint: 1, 1
 			orientation: 'vertical'
+#			title
 			CardLabel:
 				size_hint: 1, 0.25
 				text: root.name
 				text_height_multiplier: 0.7
+#			ETA and progress bar
 			StackLayout:
 				size_hint: 1, 0.25
 				CardLabel:

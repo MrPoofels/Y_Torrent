@@ -1,52 +1,94 @@
-from typing import Iterable
+from typing import Iterable, Any, List
 
 import bencodepy
 import asyncio
 import Parallel_Download_Manager as PMD
 import torf
+import random
+import socket
+
+PROTOCOL_ID = (0x41727101980).to_bytes(8, 'big', signed=False)
 
 
-@PMD.Async_init
-class TrackerCommunication:
-    async def __init__(self, announce, info_hash, peer_id, ip, download_manager):
-        """
+class TrackerCommunication(asyncio.DatagramProtocol):
+	def __init__(self, trackers):
+		"""
 
-        Args:
-            announce (torf._utils.URL):
-        """
-        print(announce)
-        self.reader, self.writer = await asyncio.open_connection(host=announce, port=443, ssl=True)
-        self.announce = announce
-        self.info_hash = info_hash
-        self.peer_id = peer_id
-        self.ip = ip
-        self.download_manager = download_manager
-        self.periodic_GET_task = None
+		Args:
+			trackers (torf._utils.URL):
+		
+		"""
+		super().__init__()
+		# for tracker in trackers:
+		# 	if tracker[0].scheme == 'udp':
+		# 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		# 		self.socket.connect((tracker[0].hostname, tracker[0].port))
+		# 		self.port = tracker[0].port
+		# 		break
+		self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.socket.connect((trackers[1][0].hostname, trackers[1][0].port))
+		self.port = trackers[1][0].port
+		self.connection_id = None
+		self.socket.settimeout(15)
+	
+	async def connect(self, retries=0):
+		self.socket.settimeout(15 * (2 ^ retries))
+		transaction_id = (random.getrandbits(32))
+		transaction_id = transaction_id.to_bytes(4, 'big', signed=False)
+		msg = PROTOCOL_ID + (0).to_bytes(4, 'big', signed=False) + transaction_id
+		self.socket.send(msg)
+		try:
+			response = self.socket.recv(16)
+			if int.from_bytes(response[:4], 'big', signed=False) == 0:
+				if response[4:8] == transaction_id:
+					self.connection_id = int.from_bytes(response[8:], 'big', signed=False)
+				else:
+					print(':(')
+		except socket.timeout:
+			print('timeout')
+			if retries == 8:
+				raise BaseException
+			await self.connect(retries + 1)
+	
+	def announce(self, download_manager, event, retries=0):
+		"""
 
-    async def http_GET(self, uploaded, downloaded, left, event=None):
-        message = self.announce + f"?info_hash={self.info_hash}&peer_id={self.peer_id}&ip={self.ip}&port=6881&uploaded={uploaded}&downloaded={downloaded}&left={left}"
-        if event is not None:
-            message += f"&event={event}"
-        message += f"&compact=0"
-        self.writer.write(message.encode())
-        await self.writer.drain()
-
-    async def periodic_GET(self, interval):
-        while True:
-            await asyncio.sleep(interval)
-            await self.http_GET(self.download_manager.bytes_downloaded, self.download_manager.bytes_uploaded, self.download_manager.meta_info.size - self.download_manager.bytes_downloaded)
-            await self.get_tracker_response()
-
-    async def interpret_tracker_response(self):
-        response_dict = (await self.get_tracker_response())
-        interval = response_dict["interval"]
-        peer_info_list = []
-        for peer in response_dict["peers"]:
-            peer_info_list.append((peer["peer_id"], peer["ip"], peer["port"]))
-        return peer_info_list, interval
-
-
-    async def get_tracker_response(self):
-        data = (await self.reader.read(-1)).decode("utf-8")
-        response_dict: dict = bencodepy.decode(data)
-        return response_dict
+		Args:
+			download_manager (PMD.DownloadManager):
+		"""
+		self.socket.settimeout(15 * (2 ^ retries))
+		transaction_id = (random.getrandbits(32)).to_bytes(4, 'big', signed=False)
+		num_want = 17
+		msg = bytearray()
+		msg.extend(
+			self.connection_id.to_bytes(8, 'big', signed=False)
+			+ (1).to_bytes(4, 'big', signed=False)
+			+ transaction_id + bytes.fromhex(download_manager.meta_info.infohash)
+			+ download_manager.client_id.encode()
+			+ download_manager.bytes_downloaded.to_bytes(8, 'big', signed=False)
+			+ (download_manager.meta_info.size - download_manager.bytes_downloaded).to_bytes(8, 'big', signed=False)
+			+ download_manager.bytes_uploaded.to_bytes(8, 'big', signed=False)
+			+ event.to_bytes(4, 'big', signed=False) + (0).to_bytes(4, 'big', signed=False)
+			+ (0).to_bytes(4, 'big', signed=False) + num_want.to_bytes(4, 'big', signed=False)
+			+ self.port.to_bytes(2, 'big', signed=False))
+		self.socket.send(msg)
+		try:
+			response = self.socket.recv(20 + 6 * num_want)
+			if int.from_bytes(response[:4], 'big', signed=False) == 1:
+				if response[4:8] == transaction_id:
+					leechers = int.from_bytes(response[12:16], 'big', signed=False)
+					seeders = int.from_bytes(response[16:20], 'big', signed=False)
+					peer_info_list = list()
+					response = response.removeprefix(response[:20])
+					peers = [response[6*i:6*i+6] for i in range(leechers + seeders)]
+					for peer in peers:
+						if len(peer) < 6:
+							continue
+						ip = '.'.join([str(num) for num in peer[:4:1]])
+						port = int.from_bytes(peer[4:6], 'big', signed=False)
+						peer_info_list.append((ip, port))
+					return peer_info_list
+		except socket.timeout:
+			if retries == 8:
+				raise BaseException
+			self.announce(download_manager, event, retries + 1)

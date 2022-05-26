@@ -4,10 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 16&#10;torf not working&#10;23/5/2022">
+    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 17&#10;upload to desktop&#10;23/5/2022">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/torrent_card.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/torrent_card.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/ytorrent.kv" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/ytorrent.kv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/file_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/file_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/piece.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/piece.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Torrents_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Torrents_Manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracker_communication.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracker_communication.py" afterDir="false" />
     </list>
@@ -61,10 +66,21 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
+    <property name="ASKED_ADD_EXTERNAL_FILES" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="ToolWindowRun.ShowToolbar" value="false" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Other File Types" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Python" />
+    <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" />
+  </component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings module-name="Y_Torrent" is-module-sdk="true">
+        <option name="myUseModuleSdk" value="true" />
+        <option name="myModuleName" value="Y_Torrent" />
+      </console-settings>
+    </option>
   </component>
   <component name="RunManager" selected="Python.main">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
@@ -73,6 +89,7 @@
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="KCFG_GRAPHICS_WINDOW_STATE" value="maximized" />
       </envs>
       <option name="SDK_HOME" value="C:\Users\Yahav\AppData\Local\Programs\Python\Python310\python.exe" />
       <option name="WORKING_DIRECTORY" value="" />
@@ -80,7 +97,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="" />
+      <option name="PARAMETERS" value="-m inspector" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -88,7 +105,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="test" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="Y_Torrent" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -113,11 +130,6 @@
       <item itemvalue="Python.main" />
       <item itemvalue="Python.test" />
     </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Python.test" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -205,7 +217,14 @@
       <option name="project" value="LOCAL" />
       <updated>1653297256500</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="commit 17&#10;upload to desktop&#10;23/5/2022">
+      <created>1653348041021</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1653348041021</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -248,83 +267,59 @@
     <MESSAGE value="commit 14&#10;base layout done&#10;15/5/2022" />
     <MESSAGE value="commit 15&#10;broken commit pc needs restart&#10;15/5/2022" />
     <MESSAGE value="commit 16&#10;torf not working&#10;23/5/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit 16&#10;torf not working&#10;23/5/2022" />
+    <MESSAGE value="commit 17&#10;upload to desktop&#10;23/5/2022" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit 17&#10;upload to desktop&#10;23/5/2022" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>117</line>
-          <option name="timeStamp" value="15" />
-        </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Torrents_Manager.py</url>
           <line>30</line>
           <option name="timeStamp" value="16" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <condition expression="curr_piece.piece_index == 18" language="Python" />
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>280</line>
-          <option name="timeStamp" value="59" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>286</line>
+          <line>313</line>
           <option name="timeStamp" value="63" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>278</line>
+          <line>305</line>
           <option name="timeStamp" value="65" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>269</line>
+          <line>297</line>
           <option name="timeStamp" value="74" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <condition expression="self.download_manager.client_id == 'Leecher1'.ljust(20)" language="Python" />
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>218</line>
+          <line>246</line>
           <option name="timeStamp" value="75" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>143</line>
-          <option name="timeStamp" value="78" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>142</line>
-          <option name="timeStamp" value="79" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>147</line>
-          <option name="timeStamp" value="81" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <condition expression="message_id == 6" language="Python" />
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
-          <line>317</line>
+          <line>342</line>
           <option name="timeStamp" value="88" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/GUI/scaling_text.py</url>
-          <line>17</line>
-          <option name="timeStamp" value="107" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/tracker_communication.py</url>
-          <line>16</line>
-          <option name="timeStamp" value="113" />
+          <line>90</line>
+          <option name="timeStamp" value="178" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Parallel_Download_Manager/peer.py</url>
+          <line>165</line>
+          <option name="timeStamp" value="193" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <condition expression="begin == 2096000" language="Python" />
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>48</line>
-          <option name="timeStamp" value="120" />
+          <line>96</line>
+          <option name="timeStamp" value="219" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -337,15 +332,8 @@
     </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="self.texture_size" language="Python" />
-        <watch expression="self.font_size" language="Python" />
-        <watch expression="self.text_size" language="Python" />
-        <watch expression="self.text" language="Python" />
-        <watch expression="self.size" language="Python" />
-        <watch expression="self.text_height_multiplier" language="Python" />
-        <watch expression="self.meta_info.metainfo['info']['pieces']" />
-        <watch expression="len(self.meta_info.metainfo['info']['pieces'])/20" language="Python" />
-        <watch expression="file" language="Python" />
+        <watch expression="self.peer_ip" language="Python" />
+        <watch expression="self.file.name" language="Python" />
       </configuration>
     </watches-manager>
   </component>

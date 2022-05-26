@@ -2,16 +2,16 @@ import asyncio
 import socket
 from typing import List, Any
 import logging
-
 import torf
 import Parallel_Download_Manager
+from requests import get
 
 torrents_list: list[Parallel_Download_Manager.DownloadManager] = list()  # list of DownloadManager objects
-host = socket.gethostname()
+ip = socket.gethostname()
 
 
 async def __start():
-    listener = await asyncio.start_server(__client_connected_cb, host, 6881)
+    listener = await asyncio.start_server(__client_connected_cb, ip, 6881)
     async with listener:
         await listener.serve_forever()
 
@@ -34,5 +34,5 @@ async def __client_connected_cb(reader, writer):
 
 
 async def create_new_torrent(client_id, torrent_path, path):
-    task = asyncio.create_task(Parallel_Download_Manager.DownloadManager(host, client_id, path, torrent_path))
+    task = asyncio.create_task(Parallel_Download_Manager.DownloadManager(client_id, path, torrent_path))
     torrents_list.append(await task)

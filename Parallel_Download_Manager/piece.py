@@ -3,6 +3,8 @@ import Parallel_Download_Manager as PMD
 
 
 class Piece:
+    piece_index: int
+
     def __init__(self, piece_index, piece_len):
         self.amount_in_swarm = 0
 
@@ -20,8 +22,9 @@ class Piece:
         if not last_block_len == 0:
             self.blocks_to_request.append(PMD.Block(piece_len - last_block_len, last_block_len))
 
-    async def update_progress(self, length):
-        self.bytes_downloaded += length
+    def block_done(self, block):
+        self.bytes_downloaded += block.length
+        self.blocks_to_request.remove(block)
 
     def select_block(self):
         for block in self.blocks_to_request:
