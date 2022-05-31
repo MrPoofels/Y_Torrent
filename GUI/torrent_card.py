@@ -20,13 +20,21 @@ class TorrentCard(StackLayout):
     peers = NumericProperty(0)
     seeds = NumericProperty(0)
 
-    def __init__(self, download_manager, **kwargs):
+    def __init__(self, **kwargs):
         super(TorrentCard, self).__init__(**kwargs)
-        self.download_manager = download_manager
-        self.test = AliasProperty(self.get_name, self.set_name, bind=['name'])
+        # self.download_manager = download_manager
+        # self.test = AliasProperty(self.get_name, self.set_name, bind=['name'])
+    
+    def pause(self):
+        self.download_manager.pause_all()
+        
+    def unpause(self):
+        self.download_manager.unpause_all()
         
     def get_name(self):
         return f"[anchor=Start]{self.download_manager.meta_info.name}[anchor=End]"
         
     def set_name(self, value):
         return True
+    
+    # def on_touch_up(self, touch):

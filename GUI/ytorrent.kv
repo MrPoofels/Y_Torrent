@@ -17,13 +17,12 @@
     # Default the background color for this label
     # to r 0, g 0, b 0, a 0
 
-[ToolbarButton@Button]:
+<ToolbarButton@IconButton>:
 	background_normal: ''
 	background_color: 1, 1, 1, 1
-	size_hint: 0.1, 1
-	color: 0, 0, 0, 1
-
-	text: '%s' % ctx.text
+	allow_stretch: True
+	size_hint: None, 1
+	size: self.norm_image_size
 
 <ScrollButton@Button>:
 	background_normal: ''
@@ -132,6 +131,8 @@
 	# Toolbar
 	StackLayout:
 		size_hint: 1, 0.05
+		spacing: 10
+		padding: 10, 0, 10, 0
 
 		canvas:
 			Color:
@@ -141,16 +142,14 @@
 				pos: self.pos
 
 		ToolbarButton:
-			text: 'button 1'
-
+			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\add_torrent.png'
+			on_release: app.schedule_task(app.add_torrent())
 		ToolbarButton:
-			text: 'button 2'
-
+			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\play.png'
+			on_release: app.schedule_task(app.unpause_all())
 		ToolbarButton:
-			text: 'button 3'
-
-		ToolbarButton:
-			text: 'button 4'
+			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\pause.png'
+			on_release: app.schedule_task(app.pause_all())
 
 	# Main interface
 	BoxLayout:
@@ -158,20 +157,9 @@
 		spacing: 40
 		padding: 10
 
-		# Sorting side menu
-		BackgroundLabel:
-			canvas.after:
-				Color:
-					rgba: .2, .2, .2, 1
-				Line:
-					width: 1
-					rectangle: self.x, self.y, self.width, self.height
-			background_color: 1, 1, 1, 1
-			text: 'test'
-			size_hint: 0.3, 1
-
 		# Torrent cards scrolling list
 		ScrollView:
+			padding: 0, 10, 0, 10
 			do_scroll_x: False
 			do_scroll_y: True
 			size: self.size
@@ -186,21 +174,5 @@
 				size_hint_y: None
 				row_default_height: '175dp'
 				row_force_default: True
-
-				TorrentCard:
-
-				TorrentCard:
-
-				TorrentCard:
-
-				TorrentCard:
-
-				TorrentCard:
-
-				TorrentCard:
-
-				TorrentCard:
-
-				TorrentCard:
 		Label:
 			size_hint: 0, 1

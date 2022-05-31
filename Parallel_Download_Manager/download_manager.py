@@ -84,7 +84,6 @@ class DownloadManager:
         await peer.initiate_peer()
         
         
-        
     async def write_data(self, piece_index, data, length, begin):
         """
 
@@ -255,3 +254,20 @@ class DownloadManager:
             curr_peer = await self.unchoke_random_peer()
             await asyncio.sleep(30)
             await curr_peer.change_am_choking_state(True)
+            
+            
+    async def pause_all(self):
+        self.choking_algorithm_task.cancel()
+        self.optimistic_unchoke_timer_task.cancel()
+        for peer in self.peer_list:
+            await peer.change_am_choking_state(True)
+            await peer.change_am_interested_state(False)
+            
+            
+    async def unpause_all(self):
+        self.downloaders = []
+        self.optimistic_unchoke_timer_task = asyncio.create_task(self.optimistic_unchoke_timer())
+        self.choking_algorithm_task = asyncio.create_task(self.choking_algorithm())
+        for peer in self.peer_list:
+            if peer.select_piece() is not None:
+                await peer.change_am_interested_state(True)

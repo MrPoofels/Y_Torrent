@@ -10,7 +10,7 @@ import socket
 PROTOCOL_ID = (0x41727101980).to_bytes(8, 'big', signed=False)
 
 
-class TrackerCommunication(asyncio.DatagramProtocol):
+class TrackerCommunication:
 	def __init__(self, trackers):
 		"""
 

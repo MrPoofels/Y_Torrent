@@ -4,14 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 17&#10;upload to desktop&#10;23/5/2022">
+    <list default="true" id="51a74c34-f429-4d7c-8bcc-ca2611447257" name="Changes" comment="commit 18&#10;Backend fully functional&#10;front nearly done&#10;26/5/2022">
+      <change afterPath="$PROJECT_DIR$/GUI/icon_button.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GUI/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GUI/torrent_card.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/torrent_card.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GUI/ytorrent.kv" beforeDir="false" afterPath="$PROJECT_DIR$/GUI/ytorrent.kv" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/file_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/file_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/peer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/piece.py" beforeDir="false" afterPath="$PROJECT_DIR$/Parallel_Download_Manager/piece.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/test/test_Async_Object.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Parallel_Download_Manager/test/test_Download_manager.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Torrents_Manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/Torrents_Manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tracker_communication.py" beforeDir="false" afterPath="$PROJECT_DIR$/tracker_communication.py" afterDir="false" />
@@ -71,7 +72,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="ToolWindowRun.ShowToolbar" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" />
-    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Python" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
     <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py" />
   </component>
   <component name="PyConsoleOptionsProvider">
@@ -224,7 +225,14 @@
       <option name="project" value="LOCAL" />
       <updated>1653348041021</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="commit 18&#10;Backend fully functional&#10;front nearly done&#10;26/5/2022">
+      <created>1653572496623</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1653572496623</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -268,7 +276,8 @@
     <MESSAGE value="commit 15&#10;broken commit pc needs restart&#10;15/5/2022" />
     <MESSAGE value="commit 16&#10;torf not working&#10;23/5/2022" />
     <MESSAGE value="commit 17&#10;upload to desktop&#10;23/5/2022" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit 17&#10;upload to desktop&#10;23/5/2022" />
+    <MESSAGE value="commit 18&#10;Backend fully functional&#10;front nearly done&#10;26/5/2022" />
+    <option name="LAST_COMMIT_MESSAGE" value="commit 18&#10;Backend fully functional&#10;front nearly done&#10;26/5/2022" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -318,7 +327,7 @@
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <condition expression="begin == 2096000" language="Python" />
           <url>file://$PROJECT_DIR$/Parallel_Download_Manager/download_manager.py</url>
-          <line>96</line>
+          <line>95</line>
           <option name="timeStamp" value="219" />
         </line-breakpoint>
       </breakpoints>
