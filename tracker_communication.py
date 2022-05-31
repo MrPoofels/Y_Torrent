@@ -25,6 +25,8 @@ class TrackerCommunication:
 		# 		self.socket.connect((tracker[0].hostname, tracker[0].port))
 		# 		self.port = tracker[0].port
 		# 		break
+		self.seeders = 0
+		self.leechers = 0
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.socket.connect((trackers[1][0].hostname, trackers[1][0].port))
 		self.port = trackers[1][0].port
@@ -76,11 +78,11 @@ class TrackerCommunication:
 			response = self.socket.recv(20 + 6 * num_want)
 			if int.from_bytes(response[:4], 'big', signed=False) == 1:
 				if response[4:8] == transaction_id:
-					leechers = int.from_bytes(response[12:16], 'big', signed=False)
-					seeders = int.from_bytes(response[16:20], 'big', signed=False)
+					self.leechers = int.from_bytes(response[12:16], 'big', signed=False)
+					self.seeders = int.from_bytes(response[16:20], 'big', signed=False)
 					peer_info_list = list()
 					response = response.removeprefix(response[:20])
-					peers = [response[6*i:6*i+6] for i in range(leechers + seeders)]
+					peers = [response[6*i:6*i+6] for i in range(self.leechers + self.seeders)]
 					for peer in peers:
 						if len(peer) < 6:
 							continue

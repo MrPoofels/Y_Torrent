@@ -95,10 +95,25 @@
 					size_hint: 0.25, 1
 					text: root.eta
 					text_height_multiplier: 0.6
+				ProgressBar:
+					max: root.download_manager.meta_info.size
+					value: root.download_manager.bytes_downloaded
+			BoxLayout:
+#				up dw speed
+				GridLayout:
+					CardLabel:
+						text: root.download_speed
+					CardLabel:
+						text: root.upload_speed
+#				seeders and leechers amount
+				GridLayout:
+					CardLabel:
+						text: root.seeders
+					CardLabel:
+						text: root.leechers
 			CardLabel:
 				size_hint: 1, 0.25
-			CardLabel:
-				size_hint: 1, 0.25
+				text: root.percent
 
 
 

@@ -6,35 +6,32 @@ from kivy.properties import NumericProperty, StringProperty, ObjectProperty, Ali
 from kivy.graphics import *
 from GUI import ScalingText
 from Parallel_Download_Manager import DownloadManager
+import numpy as np
 
 
 class TorrentCard(StackLayout):
     download_manager: DownloadManager
-    # download_manager = ObjectProperty()
-    # test = AliasProperty(se)
-    name = StringProperty('[anchor=Start]Spirited Away (1080p)[anchor=End]')
-    eta = StringProperty('[anchor=Start]ETA: 2D 7H 30M[anchor=End]')
-    progress_bar = ObjectProperty()
+    name = StringProperty()
+    eta = StringProperty()
     download_speed = NumericProperty(0)
     upload_speed = NumericProperty(0)
-    peers = NumericProperty(0)
-    seeds = NumericProperty(0)
+    leechers = NumericProperty(0)
+    seeders = NumericProperty(0)
+    percent = NumericProperty(0)
 
-    def __init__(self, **kwargs):
+    def __init__(self, download_manager, **kwargs):
         super(TorrentCard, self).__init__(**kwargs)
-        # self.download_manager = download_manager
-        # self.test = AliasProperty(self.get_name, self.set_name, bind=['name'])
+        self.download_manager = download_manager
+        self.name = f"[anchor=Start]{self.download_manager.meta_info.name}[anchor=End]"
+        self.download_speed = np.sum([peer.client_download_rate for peer in self.download_manager.peer_list])
+        self.upload_speed = np.sum([peer.client_upload_rate for peer in self.download_manager.peer_list])
+        self.eta = f'[anchor=Start]ETA: {self.download_manager.meta_info.size / self.download_speed}[anchor=End]'
+        self.leechers = self.download_manager.tracker_communication.leechers
+        self.seeders = self.download_manager.tracker_communication.seeders
+        self.percent = self.download_manager.bytes_downloaded / self.download_manager.meta_info.size
     
     def pause(self):
         self.download_manager.pause_all()
         
     def unpause(self):
         self.download_manager.unpause_all()
-        
-    def get_name(self):
-        return f"[anchor=Start]{self.download_manager.meta_info.name}[anchor=End]"
-        
-    def set_name(self, value):
-        return True
-    
-    # def on_touch_up(self, touch):
