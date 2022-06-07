@@ -76,7 +76,11 @@ class Peer:
 	async def initiate_peer(self):
 		try:
 			if (self.reader, self.writer) == (None, None):  # If this client is the initiator
-				await self.initialize_connection(self.peer_ip, self.peer_port)
+				try:
+					fut = self.initialize_connection(self.peer_ip, self.peer_port)
+					await asyncio.wait_for(fut, timeout=3)
+				except asyncio.TimeoutError:
+					raise ConnectionResetError
 			else:  # If this client is the recipient
 				await self.send_handshake()
 			# await self.writer.drain()
@@ -87,8 +91,10 @@ class Peer:
 			self.request_loop_task = None  # will contain a task for request_loop when an un-choke happens
 			self.upload_loop_task = None
 			self.average_rate_task = asyncio.create_task(self.average_up_dw_rate())
+			logging.info(f"initialized peer: {self.peer_ip}")
 		except ConnectionResetError:
-			raise asyncio.CancelledError
+			self.download_manager.peer_list.remove(self)
+			await self.shutdown()
 	
 	async def initialize_connection(self, peer_ip, peer_port):
 		await self.initialize_stream(peer_ip, peer_port)
@@ -124,6 +130,7 @@ class Peer:
 	
 	async def shutdown(self):
 		self.download_manager.domination += 1
+		logging.warning(f"shutdown {self.peer_ip}")
 		logging.warning(f"shutdown {self.download_manager.domination} peers")
 		self.optimistic_unchoke_weight = 0
 		self.client_upload_rate = 0
@@ -139,7 +146,7 @@ class Peer:
 		if self.writer is not None:
 			self.writer.close()
 			await self.writer.wait_closed()
-		asyncio.current_task().cancel()
+		raise asyncio.CancelledError
 	
 	async def message_handler(self, length, message_id, payload, q):
 		match message_id:
@@ -226,6 +233,8 @@ class Peer:
 		return (length - 1), message_id, payload
 	
 	async def send_have_msg(self, piece_index):
+		if self.writer is None:
+			logging.error(f"peer {self.peer_ip} did not initialize properly")
 		message = HAVE_MESSAGE_LENGTH + HAVE_MESSAGE_ID + piece_index.to_bytes(4, 'big')
 		self.writer.write(message)
 		await self.writer.drain()
@@ -357,12 +366,18 @@ class Peer:
 			piece.amount_in_swarm += 1
 	
 	async def average_up_dw_rate(self):
+		await asyncio.sleep(2)
 		while True:
-			await asyncio.sleep(10)
-			self.client_download_rate = np.sum(self.download_rolling_window) / 20
-			self.client_upload_rate = np.sum(self.upload_rolling_window) / 20
+			bytes_downloaded = 0
+			bytes_uploaded = 0
+			for index in range(2):
+				bytes_downloaded += self.download_rolling_window[index]
+				bytes_uploaded += self.upload_rolling_window[index]
+			self.client_download_rate = bytes_downloaded / 20
+			self.client_upload_rate = bytes_uploaded / 20
 			self.upload_rolling_window.appendleft(0)
 			self.download_rolling_window.appendleft(0)
+			await asyncio.sleep(10)
 	
 	def __lt__(self, other):
 		if self.download_manager.seeder_mode:
@@ -370,14 +385,14 @@ class Peer:
 		else:
 			return self.client_download_rate < other.client_download_rate
 	
-	def __eq__(self, other):
+	def is_equal(self, other):
 		if self.download_manager.seeder_mode:
 			return self.client_upload_rate == other.client_upload_rate
 		else:
 			return self.client_download_rate == other.client_download_rate
 	
 	def __le__(self, other):
-		return self.__lt__(other) or self.__eq__(other)
+		return self.__lt__(other) or self.is_equal(other)
 	
 	def __ge__(self, other):
-		return not self.__lt__(other) or self.__eq__(other)
+		return not self.__lt__(other) or self.is_equal(other)

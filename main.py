@@ -31,7 +31,8 @@ class YTorrentApp(App):
 	
 	
 	def build(self):
-		return HomeScreen()
+		self.root = HomeScreen()
+		return self.root
 	
 	def app_func(self, *starting_tasks):
 		"""This will run methods asynchronously and then block until they
@@ -52,7 +53,6 @@ class YTorrentApp(App):
 		self.tasks.append(asyncio.create_task(coroutine))
 	
 	async def add_torrent(self):
-		print('blah')
 		download_manager = await Torrents_Manager.create_new_torrent('-YT0015-547297019273', 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\Morbius [2022] YG.torrent', 'C:\\Users\\Yahav\\Desktop')
 		self.root.cards_list_content.add_widget(TorrentCard(download_manager))
 	

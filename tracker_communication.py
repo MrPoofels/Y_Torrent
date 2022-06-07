@@ -60,7 +60,7 @@ class TrackerCommunication:
 		"""
 		self.socket.settimeout(15 * (2 ^ retries))
 		transaction_id = (random.getrandbits(32)).to_bytes(4, 'big', signed=False)
-		num_want = 17
+		num_want = 50
 		msg = bytearray()
 		msg.extend(
 			self.connection_id.to_bytes(8, 'big', signed=False)

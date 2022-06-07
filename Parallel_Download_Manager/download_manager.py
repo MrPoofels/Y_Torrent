@@ -57,7 +57,8 @@ class DownloadManager:
         self.priority_list.sort()
         
         for piece in self.piece_list:
-            await self.verify_piece(piece, self.get_piece_size(piece.piece_index))
+            if await self.verify_piece(piece, self.get_piece_size(piece.piece_index)):
+                self.bytes_downloaded += self.get_piece_size(piece.piece_index)
     
         if self.priority_list:
             self.seeder_mode = False
@@ -68,10 +69,7 @@ class DownloadManager:
         peer_info_list = self.tracker_communication.announce(self, 2)
     
         self.peer_list = [PMD.Peer(self, peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]
-        try:
-            await asyncio.gather(*[peer.initiate_peer() for peer in self.peer_list])
-        except asyncio.CancelledError:
-            logging.warning(f'peer was cancelled')
+        await asyncio.gather(*[peer.initiate_peer() for peer in self.peer_list], return_exceptions=True)
         self.peer_list.sort(reverse=True)
     
         self.downloaders = []

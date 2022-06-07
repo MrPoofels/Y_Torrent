@@ -96,17 +96,21 @@
 					text: root.eta
 					text_height_multiplier: 0.6
 				ProgressBar:
+					size_hint: 0.75, 1
 					max: root.download_manager.meta_info.size
 					value: root.download_manager.bytes_downloaded
 			BoxLayout:
+				size_hint: 1, 0.25
 #				up dw speed
 				GridLayout:
+					rows: 1
 					CardLabel:
 						text: root.download_speed
 					CardLabel:
 						text: root.upload_speed
 #				seeders and leechers amount
 				GridLayout:
+					rows: 1
 					CardLabel:
 						text: root.seeders
 					CardLabel:
@@ -189,5 +193,7 @@
 				size_hint_y: None
 				row_default_height: '175dp'
 				row_force_default: True
+
+
 		Label:
 			size_hint: 0, 1
