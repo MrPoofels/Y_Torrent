@@ -14,6 +14,8 @@ class Piece:
 
         self.blocks_to_request = list()
         self.initiate_block_list(piece_len)
+        
+        self.fail_counter = 0
 
     def initiate_block_list(self, piece_len):
         self.blocks_to_request = list()

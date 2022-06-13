@@ -38,7 +38,7 @@ class FileManager:
         self.file.seek(begin)
         file_data = data[:self.file_size]
         self.file.write(file_data)
-        logging.info(f"wrote {len(file_data)} bytes to {self.file.name}")
+        # logging.info(f"wrote {len(file_data)} bytes to {self.file.name}")
         return data[len(file_data):]
 
     async def read_from_file(self, begin, length):

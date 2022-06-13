@@ -59,7 +59,7 @@ class DownloadManager:
         for piece in self.piece_list:
             if await self.verify_piece(piece, self.get_piece_size(piece.piece_index)):
                 self.bytes_downloaded += self.get_piece_size(piece.piece_index)
-    
+        
         if self.priority_list:
             self.seeder_mode = False
         else:
@@ -91,10 +91,8 @@ class DownloadManager:
                 if peer.peer_ip == peer_info[PEER_IP_INDEX]:
                     peer_info_list.remove(peer_info)
         new_peers_list = [PMD.Peer(self, peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]
-        self.peer_list.extend(new_peers_list)
         await asyncio.gather(*[peer.initiate_peer() for peer in new_peers_list], return_exceptions=True)
         self.peer_list.sort(reverse=True)
-        
         
         
     async def write_data(self, piece_index, data, length, begin):
@@ -166,13 +164,25 @@ class DownloadManager:
             self.bitfield.set(True, piece.piece_index)
             self.priority_list.remove(piece)
             if not self.priority_list:
+                logging.info("entering seeder mode")
+                self.seeder_mode = True
+            return True
+        elif piece.fail_counter >= 2:
+            logging.warning(
+                f"Piece number {piece.piece_index} has failed verification 3 times passing verification to avoid loop")
+            self.bitfield.set(True, piece.piece_index)
+            self.priority_list.remove(piece)
+            if not self.priority_list:
+                logging.info("entering seeder mode")
                 self.seeder_mode = True
             return True
         else:
-            if piece.bytes_downloaded > 0:
-                self.bytes_downloaded -= piece_size
+            self.bytes_downloaded -= piece.bytes_downloaded
             piece.bytes_downloaded = 0
             piece.initiate_block_list(piece_size)
+            self.priority_list.remove(piece)
+            self.priority_list.append(piece)
+            piece.fail_counter += 1
             logging.warning(
                 f"Piece number {piece.piece_index} did not pass verification")
             return False
@@ -273,14 +283,23 @@ class DownloadManager:
         self.choking_algorithm_task.cancel()
         self.optimistic_unchoke_timer_task.cancel()
         for peer in self.peer_list:
-            await peer.change_am_choking_state(True)
-            await peer.change_am_interested_state(False)
-            
-            
+            peer._am_interested = False
+            peer._am_choking = True
+            peer.optimistic_unchoke_weight = 0
+            peer.client_upload_rate = 0
+            peer.client_download_rate = 0
+            if peer.average_rate_task is not None:
+                peer.average_rate_task.cancel()
+            if peer.upload_loop_task is not None:
+                peer.upload_loop_task.cancel()
+            if peer.request_loop_task is not None:
+                peer.request_loop_task.cancel()
+
     async def unpause_all(self):
         self.downloaders = []
         self.optimistic_unchoke_timer_task = asyncio.create_task(self.optimistic_unchoke_timer())
         self.choking_algorithm_task = asyncio.create_task(self.choking_algorithm())
         for peer in self.peer_list:
-            if peer.select_piece() is not None:
+            peer.average_rate_task = asyncio.create_task(peer.average_up_dw_rate())
+            if await peer.select_piece() is not None:
                 await peer.change_am_interested_state(True)

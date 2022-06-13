@@ -104,7 +104,7 @@
 				ProgressBar:
 					size_hint: 0.75, 1
 					max: root.download_manager.meta_info.size
-					value: root.download_manager.bytes_downloaded
+					value: root.progress
 			BoxLayout:
 				size_hint: 1, 0.25
 #				up dw speed
@@ -199,7 +199,5 @@
 				size_hint_y: None
 				row_default_height: '175dp'
 				row_force_default: True
-
-
 		Label:
 			size_hint: 0, 1

@@ -56,9 +56,9 @@ class Peer:
 		self._peer_interested = False
 		
 		self.client_upload_rate = 0
-		self.upload_rolling_window = collections.deque([0, 0], maxlen=2)
+		self.upload_rolling_window = collections.deque([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], maxlen=20)
 		self.client_download_rate = 0
-		self.download_rolling_window = collections.deque([0, 0], maxlen=2)
+		self.download_rolling_window = collections.deque([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], maxlen=20)
 		
 		self.pending_requests = list()
 		self.blocks_to_upload = collections.deque()
@@ -80,9 +80,11 @@ class Peer:
 				try:
 					fut = self.initialize_connection(self.peer_ip, self.peer_port)
 					await asyncio.wait_for(fut, timeout=5)
+					self.download_manager.peer_list.append(self)
 				except asyncio.TimeoutError:
 					logging.debug(f"peer: {self.peer_ip} timed out")
-					raise ConnectionResetError
+					await self.shutdown()
+					return
 			else:  # If this client is the recipient
 				await self.send_handshake()
 			# await self.writer.drain()
@@ -94,7 +96,7 @@ class Peer:
 			self.upload_loop_task = None
 			self.average_rate_task = asyncio.create_task(self.average_up_dw_rate())
 			logging.info(f"initialized peer: {self.peer_ip}")
-		except ConnectionResetError or ConnectionAbortedError:
+		except ConnectionResetError or ConnectionAbortedError or asyncio.CancelledError:
 			self.download_manager.peer_list.remove(self)
 			await self.shutdown()
 	
@@ -134,9 +136,6 @@ class Peer:
 		self.download_manager.domination += 1
 		logging.warning(f"shutdown {self.peer_ip}")
 		logging.warning(f"shutdown {self.download_manager.domination} peers")
-		self.optimistic_unchoke_weight = 0
-		self.client_upload_rate = 0
-		self.client_download_rate = 0
 		if self.average_rate_task is not None:
 			self.average_rate_task.cancel()
 		if self.upload_loop_task is not None:
@@ -145,6 +144,11 @@ class Peer:
 			self.request_loop_task.cancel()
 		if self.receive_loop_task is not None:
 			self.receive_loop_task.cancel()
+		self.optimistic_unchoke_weight = 0
+		self.client_upload_rate = 0
+		self.client_download_rate = 0
+		for piece in self.model:
+			piece.amount_in_swarm -= 1
 		if self.writer is not None:
 			self.writer.close()
 			await self.writer.wait_closed()
@@ -221,8 +225,7 @@ class Peer:
 		msg = await self.reader.read(4)
 		length = int.from_bytes(msg, 'big')
 		if length == 0:
-			message_id = "-1"
-			payload = ""
+			return None, None, None
 		else:
 			message_id = int.from_bytes(await self.reader.read(1), 'big')
 			if length == 1:
@@ -351,6 +354,9 @@ class Peer:
 		q.append(asyncio.create_task(self.recv_tasks_cleanup(q)))
 		while True:
 			length, message_id, payload = await self.message_interpreter()
+			if length is None:
+				await asyncio.sleep(0.01)
+				continue
 			await self.message_handler(length, message_id, payload, q)
 	
 	async def recv_tasks_cleanup(self, q):
@@ -372,14 +378,14 @@ class Peer:
 		while True:
 			bytes_downloaded = 0
 			bytes_uploaded = 0
-			for index in range(2):
+			for index in range(20):
 				bytes_downloaded += self.download_rolling_window[index]
 				bytes_uploaded += self.upload_rolling_window[index]
 			self.client_download_rate = bytes_downloaded / 20
 			self.client_upload_rate = bytes_uploaded / 20
 			self.upload_rolling_window.appendleft(0)
 			self.download_rolling_window.appendleft(0)
-			await asyncio.sleep(10)
+			await asyncio.sleep(1)
 	
 	def __lt__(self, other):
 		if self.download_manager.seeder_mode:

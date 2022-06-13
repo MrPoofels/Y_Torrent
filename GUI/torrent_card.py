@@ -5,6 +5,7 @@ from kivy.graphics.texture import texture_create_from_data
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.properties import NumericProperty, StringProperty, ObjectProperty, AliasProperty
+from kivy.uix.progressbar import ProgressBar
 from kivy.graphics import *
 from GUI import ScalingText
 from Parallel_Download_Manager import DownloadManager
@@ -19,12 +20,19 @@ def initialize_card(ins):
 	for peer in ins.download_manager.peer_list:
 		download_speed += peer.client_download_rate
 		upload_speed += peer.client_upload_rate
-	ins.download_speed = f"[anchor=Start]Download speed: {int(download_speed/1000)} kb/s[anchor=End]"
-	ins.upload_speed = f"[anchor=Start]Upload speed: {int(upload_speed/1000)} kb/s[anchor=End]"
-	if download_speed == 0:
-		ins.eta = f'[anchor=Start]ETA: N/A'
+	if not ins.download_manager.seeder_mode:
+		ins.download_speed = f"[anchor=Start]Download speed: {int(download_speed / 1000)} kb/s[anchor=End]"
+		if download_speed == 0:
+			ins.eta = f'[anchor=Start]ETA: N/A[anchor=End]'
+		else:
+			seconds_left = int(
+				(ins.download_manager.meta_info.size - ins.download_manager.bytes_downloaded) / download_speed)
+			ins.eta = f'[anchor=Start]ETA: {datetime.timedelta(seconds=seconds_left)}[anchor=End]'
 	else:
-		ins.eta = f'[anchor=Start]ETA: {datetime.timedelta(seconds=int(ins.download_manager.meta_info.size / download_speed))}[anchor=End]'
+		ins.download_speed = f"[anchor=Start]Download speed: Seeding[anchor=End]"
+		ins.eta = f'[anchor=Start]ETA: Done[anchor=End]'
+	ins.progress = ins.download_manager.bytes_downloaded
+	ins.upload_speed = f"[anchor=Start]Upload speed: {int(upload_speed / 1000)} kb/s[anchor=End]"
 	ins.leechers = f"[anchor=Start]Leechers: {ins.download_manager.tracker_communication.leechers}[anchor=End]"
 	ins.seeders = f"[anchor=Start]Seeders: {ins.download_manager.tracker_communication.seeders}[anchor=End]"
 	ins.percent = f"[anchor=Start]{int(ins.download_manager.bytes_downloaded / ins.download_manager.meta_info.size * 100)}%[anchor=End]"
@@ -34,6 +42,7 @@ class TorrentCard(StackLayout):
 	download_manager: DownloadManager
 	name = StringProperty()
 	eta = StringProperty()
+	progress = NumericProperty(0)
 	download_speed = StringProperty()
 	upload_speed = StringProperty()
 	leechers = StringProperty()
@@ -48,27 +57,29 @@ class TorrentCard(StackLayout):
 
 
 async def update_card(card):
+	await asyncio.sleep(2)
 	while True:
-		await asyncio.sleep(2)
 		card.name = f"[anchor=Start]{card.download_manager.meta_info.name}[anchor=End]"
 		download_speed = 0
 		upload_speed = 0
 		for peer in card.download_manager.peer_list:
 			download_speed += peer.client_download_rate
 			upload_speed += peer.client_upload_rate
-		card.download_speed = f"[anchor=Start]Download speed: {int(download_speed/1000)} kb/s[anchor=End]"
-		card.upload_speed = f"[anchor=Start]Upload speed: {int(upload_speed/1000)} kb/s[anchor=End]"
-		if download_speed == 0:
-			card.eta = f'[anchor=Start]ETA: N/A[anchor=End]'
+		card.upload_speed = f"[anchor=Start]Upload speed: {int(upload_speed / 1000)} kb/s[anchor=End]"
+		
+		if not card.download_manager.seeder_mode:
+			card.download_speed = f"[anchor=Start]Download speed: {int(download_speed / 1000)} kb/s[anchor=End]"
+			if download_speed == 0:
+				card.eta = f'[anchor=Start]ETA: N/A[anchor=End]'
+			else:
+				seconds_left = int(
+					(card.download_manager.meta_info.size - card.download_manager.bytes_downloaded) / download_speed)
+				card.eta = f'[anchor=Start]ETA: {datetime.timedelta(seconds=seconds_left)}[anchor=End]'
 		else:
-			card.eta = f'[anchor=Start]ETA: {datetime.timedelta(seconds=int(card.download_manager.meta_info.size / download_speed))}[anchor=End]'
+			card.download_speed = f"[anchor=Start]Download speed: Seeding[anchor=End]"
+			card.eta = f'[anchor=Start]ETA: Done[anchor=End]'
+		card.progress = card.download_manager.bytes_downloaded
 		card.leechers = f"[anchor=Start]Leechers: {card.download_manager.tracker_communication.leechers}[anchor=End]"
 		card.seeders = f"[anchor=Start]Seeders: {card.download_manager.tracker_communication.seeders}[anchor=End]"
 		card.percent = f"[anchor=Start]{int(card.download_manager.bytes_downloaded / card.download_manager.meta_info.size * 100)}%[anchor=End]"
-		logging.info(f"updated card of {card.download_manager.meta_info.name}")
-		download_speed = 0
-		upload_speed = 0
-		for peer in card.download_manager.peer_list:
-			download_speed += peer.client_download_rate
-			upload_speed += peer.client_upload_rate
-		logging.debug(f"download speed: {download_speed}")
+		await asyncio.sleep(0.1)
