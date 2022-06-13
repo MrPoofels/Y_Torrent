@@ -21,6 +21,8 @@ from GUI import HomeScreen
 from GUI import TorrentCard
 from GUI import IconButton
 from kivy.uix.label import Label
+import tkinter
+from tkinter import filedialog
 
 logging.getLogger("asyncio").setLevel(logging.DEBUG)
 logging.basicConfig(level=logging.DEBUG)
@@ -53,7 +55,14 @@ class YTorrentApp(App):
 		self.tasks.append(asyncio.create_task(coroutine))
 	
 	async def add_torrent(self):
-		download_manager = await Torrents_Manager.create_new_torrent('-YT0015-547297019273', 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\Morbius [2022] YG.torrent', 'C:\\Users\\Yahav\\Desktop')
+		tkinter.Tk().withdraw()
+		torrent_file_path = filedialog.askopenfilename(title='choose torrent file').replace('/', '\\')
+		if torrent_file_path == '':
+			return
+		content_file_path = filedialog.askdirectory(title='choose where to save the content').replace('/', '\\')
+		if content_file_path == '':
+			return
+		download_manager = await Torrents_Manager.create_new_torrent('-YT0015-547297019273', torrent_file_path, content_file_path)
 		self.root.cards_list_content.add_widget(TorrentCard(download_manager))
 	
 	async def pause_all(self):

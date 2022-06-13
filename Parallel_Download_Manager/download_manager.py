@@ -64,13 +64,16 @@ class DownloadManager:
             self.seeder_mode = False
         else:
             self.seeder_mode = True
-        self.tracker_communication = tracker_communication.TrackerCommunication(self.meta_info.trackers)
-        await self.tracker_communication.connect()
-        peer_info_list = self.tracker_communication.announce(self, 2)
+            
+        self.peer_list = list()
+        
+        self.tracker_communication = tracker_communication.TrackerCommunication(self.meta_info.trackers, self)
+        # await self.tracker_communication.connect()
+        # peer_info_list = self.tracker_communication.announce(2)
     
-        self.peer_list = [PMD.Peer(self, peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]
-        await asyncio.gather(*[peer.initiate_peer() for peer in self.peer_list], return_exceptions=True)
-        self.peer_list.sort(reverse=True)
+        # self.peer_list = [PMD.Peer(self, peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]
+        # await asyncio.gather(*[peer.initiate_peer() for peer in self.peer_list], return_exceptions=True)
+        # self.peer_list.sort(reverse=True)
     
         self.downloaders = []
         self.optimistic_unchoke_timer_task = asyncio.create_task(self.optimistic_unchoke_timer())
@@ -80,6 +83,18 @@ class DownloadManager:
         peer = PMD.Peer(self, peer_id, reader=reader, writer=writer)
         self.peer_list.append(peer)
         await peer.initiate_peer()
+        
+        
+    async def extend_peer_list(self, peer_info_list):
+        for peer_info in peer_info_list:
+            for peer in self.peer_list:
+                if peer.peer_ip == peer_info[PEER_IP_INDEX]:
+                    peer_info_list.remove(peer_info)
+        new_peers_list = [PMD.Peer(self, peer_info[PEER_IP_INDEX], peer_info[PEER_PORT_INDEX]) for peer_info in peer_info_list]
+        self.peer_list.extend(new_peers_list)
+        await asyncio.gather(*[peer.initiate_peer() for peer in new_peers_list], return_exceptions=True)
+        self.peer_list.sort(reverse=True)
+        
         
         
     async def write_data(self, piece_index, data, length, begin):

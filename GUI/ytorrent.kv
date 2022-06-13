@@ -21,15 +21,19 @@
 	background_normal: ''
 	background_color: 1, 1, 1, 1
 	allow_stretch: True
-	size_hint: None, 1
 	size: self.norm_image_size
+	size_hint: None, 1
+	width: self.height
 
 <ScrollButton@Button>:
 	background_normal: ''
 	background_color: 1, 1, 1, 1
 	color: 0, 0, 0, 1
 
-<CardButton@Button>:
+<CardButton@IconButton>:
+	background_normal: ''
+	background_color: 1, 1, 1, 1
+	allow_stretch: True
 	canvas.before:
 		Color:
 			rgba: .5, .5, .5, 1
@@ -38,7 +42,6 @@
 			rectangle: self.x, self.y, self.width, self.height
 	size_hint: None, 0.3
 	width: self.height
-	color: 0, 0, 0, 1
 
 <CardLabel@ScalingText>:
 	markup: True
@@ -74,11 +77,14 @@
 			cols: 1
 			spacing: 5
 			CardButton:
-				text: '1'
+				source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\assets\\play_green.png'
+				on_release: app.schedule_task(root.download_manager.unpause_all())
 			CardButton:
-				text: '2'
+				source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\assets\\pause_yellow.png'
+				on_release: app.schedule_task(root.download_manager.pause_all())
 			CardButton:
-				text: '3'
+				source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\assets\\stop_red.png'
+				on_release: app.schedule_task(root.download_manager.pause_all())
 #		info rows
 		BoxLayout:
 			size_hint: 1, 1
@@ -150,7 +156,7 @@
 	# Toolbar
 	StackLayout:
 		size_hint: 1, 0.05
-		spacing: 10
+		spacing: 3
 		padding: 10, 0, 10, 0
 
 		canvas:
@@ -161,13 +167,13 @@
 				pos: self.pos
 
 		ToolbarButton:
-			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\add_torrent.png'
+			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\assets\\add_torrent.png'
 			on_release: app.schedule_task(app.add_torrent())
 		ToolbarButton:
-			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\play.png'
+			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\assets\\play.png'
 			on_release: app.schedule_task(app.unpause_all())
 		ToolbarButton:
-			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\Test_files\\pause.png'
+			source: 'C:\\Users\\Yahav\\PycharmProjects\\Y_Torrent\\assets\\pause.png'
 			on_release: app.schedule_task(app.pause_all())
 
 	# Main interface

@@ -9,6 +9,7 @@ from kivy.graphics import *
 from GUI import ScalingText
 from Parallel_Download_Manager import DownloadManager
 import asyncio
+import datetime
 
 
 def initialize_card(ins):
@@ -18,12 +19,12 @@ def initialize_card(ins):
 	for peer in ins.download_manager.peer_list:
 		download_speed += peer.client_download_rate
 		upload_speed += peer.client_upload_rate
-	ins.download_speed = f"Download speed: {download_speed}"
-	ins.upload_speed = f"Upload speed: {upload_speed}"
+	ins.download_speed = f"[anchor=Start]Download speed: {int(download_speed/1000)} kb/s[anchor=End]"
+	ins.upload_speed = f"[anchor=Start]Upload speed: {int(upload_speed/1000)} kb/s[anchor=End]"
 	if download_speed == 0:
-		ins.eta = f'ETA: N/A'
+		ins.eta = f'[anchor=Start]ETA: N/A'
 	else:
-		ins.eta = f'[anchor=Start]ETA: {ins.download_manager.meta_info.size / download_speed}[anchor=End]'
+		ins.eta = f'[anchor=Start]ETA: {datetime.timedelta(seconds=int(ins.download_manager.meta_info.size / download_speed))}[anchor=End]'
 	ins.leechers = f"[anchor=Start]Leechers: {ins.download_manager.tracker_communication.leechers}[anchor=End]"
 	ins.seeders = f"[anchor=Start]Seeders: {ins.download_manager.tracker_communication.seeders}[anchor=End]"
 	ins.percent = f"[anchor=Start]{int(ins.download_manager.bytes_downloaded / ins.download_manager.meta_info.size * 100)}%[anchor=End]"
@@ -55,12 +56,12 @@ async def update_card(card):
 		for peer in card.download_manager.peer_list:
 			download_speed += peer.client_download_rate
 			upload_speed += peer.client_upload_rate
-		card.download_speed = f"Download speed: {download_speed}"
-		card.upload_speed = f"Upload speed: {upload_speed}"
+		card.download_speed = f"[anchor=Start]Download speed: {int(download_speed/1000)} kb/s[anchor=End]"
+		card.upload_speed = f"[anchor=Start]Upload speed: {int(upload_speed/1000)} kb/s[anchor=End]"
 		if download_speed == 0:
-			card.eta = f'ETA: N/A'
+			card.eta = f'[anchor=Start]ETA: N/A[anchor=End]'
 		else:
-			card.eta = f'[anchor=Start]ETA: {card.download_manager.meta_info.size / download_speed}[anchor=End]'
+			card.eta = f'[anchor=Start]ETA: {datetime.timedelta(seconds=int(card.download_manager.meta_info.size / download_speed))}[anchor=End]'
 		card.leechers = f"[anchor=Start]Leechers: {card.download_manager.tracker_communication.leechers}[anchor=End]"
 		card.seeders = f"[anchor=Start]Seeders: {card.download_manager.tracker_communication.seeders}[anchor=End]"
 		card.percent = f"[anchor=Start]{int(card.download_manager.bytes_downloaded / card.download_manager.meta_info.size * 100)}%[anchor=End]"

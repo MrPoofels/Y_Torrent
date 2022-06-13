@@ -74,12 +74,14 @@ class Peer:
 		self.average_rate_task = None
 	
 	async def initiate_peer(self):
+		logging.debug(f"starting to initialize peer: {self.peer_ip}")
 		try:
 			if (self.reader, self.writer) == (None, None):  # If this client is the initiator
 				try:
 					fut = self.initialize_connection(self.peer_ip, self.peer_port)
-					await asyncio.wait_for(fut, timeout=3)
+					await asyncio.wait_for(fut, timeout=5)
 				except asyncio.TimeoutError:
+					logging.debug(f"peer: {self.peer_ip} timed out")
 					raise ConnectionResetError
 			else:  # If this client is the recipient
 				await self.send_handshake()
@@ -92,7 +94,7 @@ class Peer:
 			self.upload_loop_task = None
 			self.average_rate_task = asyncio.create_task(self.average_up_dw_rate())
 			logging.info(f"initialized peer: {self.peer_ip}")
-		except ConnectionResetError:
+		except ConnectionResetError or ConnectionAbortedError:
 			self.download_manager.peer_list.remove(self)
 			await self.shutdown()
 	
